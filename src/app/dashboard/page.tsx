@@ -18,6 +18,7 @@ const CircleMarker = dynamic(
           lat: position.coords.latitude,
           lng: position.coords.longitude,
         });
+        console.log(position.coords.latitude, position.coords.longitude);
       },
       (error) => {
         console.error(error);
@@ -47,7 +48,7 @@ const CircleMarker = dynamic(
           attributionControl={false}
         >
           <ZoomControl position="bottomright" />
-          <TileLayer url="https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}{r}.png" />
+          <TileLayer url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" />
           <CircleMarker
             center={[currentPosition.lat, currentPosition.lng]}
             radius={5}
