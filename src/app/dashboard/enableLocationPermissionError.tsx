@@ -1,7 +1,6 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-
 export default function EnableLocationPermissionError() {
   const handleReload = () => {
     window.location.reload();

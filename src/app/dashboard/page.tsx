@@ -35,6 +35,7 @@ export default function Dashboard() {
   const { data: session } = useSession(); // Session for the user jwt
   const [theme, setTheme] = useState<string>("");
   const mapRef = useRef<LeaftletMap | null>(null);
+  const [gpsError, setGpsError] = useState(false);
   // Get current position
   useEffect(() => {
       const watchId = navigator.geolocation.watchPosition(
@@ -79,13 +80,12 @@ export default function Dashboard() {
           };
         },
         (error) => {
-          console.error("Geolocation error:", error);
-          if (error.code === error.PERMISSION_DENIED) {
-            return <EnableLocationPermissionError />;
-          }
-
-          if (error.code === error.POSITION_UNAVAILABLE) {
-            return <EnableLocationPermissionError />;
+          if (
+            error.code === error.PERMISSION_DENIED ||
+            error.code === error.POSITION_UNAVAILABLE
+          ) {
+            console.log("Location error: ", error.code);
+            setGpsError(true); // Trigger the error
           }
         },
         {
@@ -102,8 +102,7 @@ export default function Dashboard() {
   useEffect(() => {
     setTheme(localStorage.getItem("jeepTa-Theme") || "light");
   }, []);
-  console.log(currentPosition);
-  console.log(currentSpeed);
+
   // Change Theme
   const handleThemeChange = () => {
     // Get From the local storage
@@ -122,6 +121,8 @@ export default function Dashboard() {
       mapRef.current.flyTo([currentPosition.lat, currentPosition.lng], 14);
     }
   };
+  
+  if(gpsError) return <EnableLocationPermissionError />
 
   if (currentPosition.lat === 0 && currentPosition.lng === 0) {
     return <Loading />;
