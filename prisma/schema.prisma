@@ -31,7 +31,7 @@ model Stop{
   id String @id @default(auto()) @map("_id") @db.ObjectId
   name String
   start String 
-  checkpoint String 
+  end String 
   jeepId String @db.ObjectId
   jeep Jeep @relation(fields: [jeepId], references: [id])
   position Position[]

@@ -3,11 +3,13 @@ import { NextResponse } from "next/server";
 
 export async function POST(request: Request) {
   try {
-      const {jeepId, name}: {jeepId: string, name: string} = await request.json();
+      const {jeepId, name, start, end}: {jeepId: string, name: string, start: string, end: string} = await request.json();
       const stop = await prisma.stop.create({
         data: {
           jeepId: jeepId,
-          name
+          name,
+          start,
+          end
         }
       });
       return NextResponse.json({message: "success", data: stop}, {status: 200})
