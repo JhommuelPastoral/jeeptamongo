@@ -32,6 +32,7 @@ export default function Dashboard() {
   const prevTimeRef = useRef<number>(0);
   const prevPositionRef = useRef<Location>({ lat: 0, lng: 0 });
   const [currentSpeed, setCurrentSpeed] = useState<number>(0);
+  const [lastUpdate, setLastUpdate] = useState<number>(Date.now());
   const { data: session } = useSession(); // Session for the user jwt
   const [theme, setTheme] = useState<string>("");
   const mapRef = useRef<LeaftletMap | null>(null);
@@ -79,6 +80,7 @@ export default function Dashboard() {
             lng: newLng,
           };
           setGpsError(false);
+          setLastUpdate(Date.now());
         },
         (error) => {
           if (
@@ -122,7 +124,20 @@ export default function Dashboard() {
       mapRef.current.flyTo([currentPosition.lat, currentPosition.lng], 14);
     }
   };
-  
+  // Check if there is a update on the location
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const now = Date.now();
+
+      if (now - lastUpdate > 10000) {
+        setGpsError(true);
+      }
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, [lastUpdate]);
+
+
   if(gpsError) return <EnableLocationPermissionError />
 
   if (currentPosition.lat === 0 && currentPosition.lng === 0) {
