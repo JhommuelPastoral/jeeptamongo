@@ -88,7 +88,7 @@ export default function Dashboard() {
     return <Loading />;
   }
   return (
-    <div className="w-screen h-screen relative">
+    <div className="w-screen h-dvh relative">
       <Suspense fallback={<Loading />}>
         <MapContainer
           center={[currentPosition.lat, currentPosition.lng]}
