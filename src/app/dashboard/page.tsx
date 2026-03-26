@@ -20,7 +20,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import EnableLocationPermissionError from "./enableLocationPermissionError";
+import EnableLocationPermissionError from "./_components/enableLocationPermissionError";
+
+import {
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+} from "@/components/ui/hover-card";
 
 type Location = {
   lat: number;
@@ -32,7 +38,6 @@ export default function Dashboard() {
   const prevTimeRef = useRef<number>(0);
   const prevPositionRef = useRef<Location>({ lat: 0, lng: 0 });
   const [currentSpeed, setCurrentSpeed] = useState<number>(0);
-  const [lastUpdate, setLastUpdate] = useState<number>(Date.now());
   const { data: session } = useSession(); // Session for the user jwt
   const [theme, setTheme] = useState<string>("");
   const mapRef = useRef<LeaftletMap | null>(null);
@@ -81,7 +86,6 @@ export default function Dashboard() {
             lng: newLng,
           };
           setGpsError(false);
-          setLastUpdate(Date.now());
         },
         (error) => {
           if (
@@ -101,19 +105,6 @@ export default function Dashboard() {
 
       return () => navigator.geolocation.clearWatch(watchId);
     }, []);
-
-  // Check if there is a update on the location
-  // useEffect(() => {
-  //   const interval = setInterval(() => {
-  //     const now = Date.now();
-
-  //     if (now - lastUpdate > 10000) {
-  //       setGpsError(true);
-  //     }
-  //   }, 3000);
-
-  //   return () => clearInterval(interval);
-  // }, [lastUpdate]);
 
   // Get Theme
   useEffect(() => {
@@ -155,7 +146,7 @@ export default function Dashboard() {
           className="w-full h-full z-0"
           zoomControl={false}
           attributionControl={false}
-          maxBounds={[[6.8, 125.1],[7.3, 125.8] ]}
+          maxBounds={[[6.8, 125.1],[7.3, 125.8]]}
           maxBoundsViscosity={1}
           minZoom={12}
           maxZoom={18}
@@ -175,8 +166,8 @@ export default function Dashboard() {
         </MapContainer>   
       </Suspense>
 
-      {/* Bottom Left Corner Details */}
-      <div className="absolute bottom-0 left-0 z-1000">
+      {/* Top Left Corner Details */}
+      <div className="absolute top-0 left-0 z-1000">
         <div className="flex flex-col items-start gap-2 p-4">
           <div className="flex items-start gap-2 flex-col">
             <div className="flex items-center gap-2">
@@ -188,7 +179,7 @@ export default function Dashboard() {
           </div>
           <div className="flex items-center gap-2">
             <div className={`${theme === "dark" ? "bg-white" : "bg-black"} w-2 h-2 rounded-full`} />
-            <p className={`${theme === "dark" ? "text-white" : "text-black"} text-sm`}>Current Speed: {currentSpeed.toFixed(5)} Kmh </p>
+            <p className={`${theme === "dark" ? "text-white" : "text-black"} text-sm`}>Current Speed: {currentSpeed.toFixed(2)} Kmh </p>
           </div>
         </div>
       </div>
@@ -199,10 +190,17 @@ export default function Dashboard() {
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="rounded-full cursor-pointer">
-                <Avatar >
-                  <AvatarImage src={session?.user?.image || ""} alt="User Profile" />
-                  <AvatarFallback>{session?.user?.name?.charAt(0) || ""}</AvatarFallback>
-                </Avatar>
+                <HoverCard openDelay={10} closeDelay={100}>
+                  <HoverCardTrigger asChild>
+                    <Avatar >
+                      <AvatarImage src={session?.user?.image || ""} alt="User Profile" />
+                      <AvatarFallback>{session?.user?.name?.charAt(0) || ""}</AvatarFallback>
+                    </Avatar>
+                  </HoverCardTrigger>
+                  <HoverCardContent side="left" align="center" className="text-center p-2 z-1001 " >
+                    {session?.user?.email || ""}
+                  </HoverCardContent>
+                </HoverCard>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
@@ -227,7 +225,7 @@ export default function Dashboard() {
       {/* Controls */}
       <div className="bottom-0 right-0 absolute z-1000">
         <div className="flex flex-col items-start gap-2 p-4">
-          <Button onClick={handleSetView} className="cursor-pointer">My Location</Button>
+          <Button onClick={handleSetView} className="cursor-pointer">Are you Lost?</Button>
         </div>
       </div>
 
