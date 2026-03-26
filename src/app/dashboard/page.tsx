@@ -28,50 +28,68 @@ type Location = {
 
 export default function Dashboard() {
   const [currentPosition, setCurrentPosition] = useState<Location>({ lat: 0, lng: 0 });
-  const [prevTime, setPrevTime] = useState<number>(0);
-  const [prevPosition, setPrevPosition] = useState<Location>({lat : 0, lng: 0});
+  const prevTimeRef = useRef<number>(0);
+  const prevPositionRef = useRef<Location>({ lat: 0, lng: 0 });
   const [currentSpeed, setCurrentSpeed] = useState<number>(0);
   const { data: session } = useSession(); // Session for the user jwt
   const [theme, setTheme] = useState<string>("");
   const mapRef = useRef<LeaftletMap | null>(null);
   // Get current position
   useEffect(() => {
-    const watchId = navigator.geolocation.watchPosition(
-      (position) => {
-        const newLat = position.coords.latitude;
-        const newLng = position.coords.longitude;
+      const watchId = navigator.geolocation.watchPosition(
+        (position) => {
+          const newLat = position.coords.latitude;
+          const newLng = position.coords.longitude;
 
-        if(prevTime !== 0 && prevPosition.lat !== 0 && prevPosition.lng !== 0){ 
-          const distance = harversineFormula(prevPosition.lat, prevPosition.lng, newLat, newLng);
-          const timeDiff = (position.timestamp - prevTime) / 1000; // seconds;
-          const speedMps = distance / timeDiff; // meters/sec
-          const speedKmh = speedMps * 3.6;
-          setCurrentSpeed(speedKmh);
+          const prevTime = prevTimeRef.current;
+          const prevPosition = prevPositionRef.current;
+
+          if (prevTime !== 0) {
+            const distance = harversineFormula(
+              prevPosition.lat,
+              prevPosition.lng,
+              newLat,
+              newLng
+            );
+
+            const timeDiff = (position.timestamp - prevTime) / 1000;
+
+            if (timeDiff > 0) {
+              const speedMps = distance / timeDiff;
+              const speedKmh = speedMps * 3.6;
+
+              // 🧠 Optional smoothing (reduce GPS jitter)
+              const smoothedSpeed =
+                speedKmh < 1 ? 0 : Number(speedKmh.toFixed(2));
+
+              setCurrentSpeed(smoothedSpeed);
+            }
+          }
+
+          setCurrentPosition({
+            lat: newLat,
+            lng: newLng,
+          });
+
+          // update refs
+          prevTimeRef.current = position.timestamp;
+          prevPositionRef.current = {
+            lat: newLat,
+            lng: newLng,
+          };
+        },
+        (error) => {
+          console.error("Geolocation error:", error);
+        },
+        {
+          enableHighAccuracy: true,
+          maximumAge: 0,
+          timeout: 5000,
         }
+      );
 
-        setCurrentPosition({
-          lat: newLat,
-          lng: newLng,
-        });
-        setPrevTime(position.timestamp);
-        setPrevPosition({
-          lat: newLat,
-          lng: newLng,
-        });
-      },
-      (error) => {
-        console.error(error);
-      },
-      {
-        enableHighAccuracy: true,
-        maximumAge: 0,
-        timeout: 5000,
-      }
-    );
-
-    // cleanup (VERY IMPORTANT)
-    return () => navigator.geolocation.clearWatch(watchId);
-  }, []);
+      return () => navigator.geolocation.clearWatch(watchId);
+    }, []);
 
   // Get Theme
   useEffect(() => {
