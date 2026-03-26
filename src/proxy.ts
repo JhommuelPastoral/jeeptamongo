@@ -4,7 +4,6 @@ import { NextResponse } from "next/server";
 export default auth((req) => {
   const isAuth = !!req.auth;
   const path = req.nextUrl.pathname;
-
   // Allow homepage for unauthenticated users
   if (!isAuth && path === "/") {
     return NextResponse.next();
