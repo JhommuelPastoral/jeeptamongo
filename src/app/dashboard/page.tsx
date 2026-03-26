@@ -69,16 +69,16 @@ export default function Dashboard() {
 
   // Get Theme
   useEffect(() => {
-    setTheme(localStorage.getItem("theme") || "light");
+    setTheme(localStorage.getItem("jeepTa-Theme") || "light");
   }, []);
   
   const handleThemeChange = () => {
     // Get From the local storage
-    if(localStorage.getItem("theme") === "dark"){
-      localStorage.setItem("theme", "light");
+    if(localStorage.getItem("jeepTa-Theme") === "dark"){
+      localStorage.setItem("jeepTa-Theme", "light");
       setTheme("light");
     } else {
-      localStorage.setItem("theme", "dark");
+      localStorage.setItem("jeepTa-Theme", "dark");
       setTheme("dark");
     }
   };
