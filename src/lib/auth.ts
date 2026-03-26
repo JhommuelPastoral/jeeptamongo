@@ -13,15 +13,26 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     maxAge: 30 * 24 * 60 * 60, // 30 days
   },
   callbacks:{
-    async signIn({profile}){
+    async signIn({profile, account}){
       try {
-        if(!profile) return false;
+        if(!profile || !account) return false;
 
         if(!profile.email) return false;
-
+        const provider = account?.provider;
+        if(provider === "google"){
+          const email = profile.email;
+          const fullName = `${profile.given_name} ${profile.family_name}`;
+          const imageUrl = profile.picture;
+          await prisma.user.upsert({
+            where: { email },
+            update: { fullName, imageUrl },
+            create: { email, fullName, imageUrl },
+          });
+        }
+        // For GitHub
         const email = profile.email;
-        const fullName = `${profile.given_name} ${profile.family_name}`;
-        const imageUrl = profile.picture;
+        const fullName = profile.name || "";
+        const imageUrl = profile.avatar_url as string || "";
         await prisma.user.upsert({
           where: { email },
           update: { fullName, imageUrl },
@@ -42,7 +53,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         return token;
       }
       token.fullName = `${profile.given_name || ""} ${profile.family_name || ""}`;
-      token.imageUrl = profile.picture;
+      token.imageUrl = profile.picture ?? profile.avatar_url as string;
       token.email = profile.email;
 
       return token;
@@ -51,6 +62,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     async session({ session, token }) {
       // expose to frontend
       if(!token) return session
+
       return session;
     },
   }

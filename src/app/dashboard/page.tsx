@@ -1,16 +1,17 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useState, useRef } from "react";
 import Loading from "../loading";
 import harversineFormula from "@/helpers/harversineFormula";
+import type { Map as LeaftletMap } from "leaflet";
 const MapContainer = dynamic(() => import("react-leaflet").then((mod) => mod.MapContainer),{ ssr: false });
 const TileLayer = dynamic(() => import("react-leaflet").then((mod) => mod.TileLayer),{ ssr: false });
 const CircleMarker = dynamic(() => import("react-leaflet").then((mod) => mod.CircleMarker),{ ssr: false });
-import { signOut } from "next-auth/react"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { useSession } from "next-auth/react"
-import { Button } from "@/components/ui/button"
+import { signOut } from "next-auth/react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useSession } from "next-auth/react";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -18,16 +19,21 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+} from "@/components/ui/dropdown-menu";
+
+type Location = {
+  lat: number;
+  lng: number;
+};
+
 export default function Dashboard() {
-  const [currentPosition, setCurrentPosition] = useState({ lat: 0, lng: 0 });
-  const [prevTime, setPrevTime] = useState(0);
-  const [prevPosition, setPrevPosition] = useState({lat : 0, lng: 0});
-  const [currentSpeed, setCurrentSpeed] = useState(0);
-  const { data: session } = useSession();
-  const [theme, setTheme] = useState("");
-
-
+  const [currentPosition, setCurrentPosition] = useState<Location>({ lat: 0, lng: 0 });
+  const [prevTime, setPrevTime] = useState<number>(0);
+  const [prevPosition, setPrevPosition] = useState<Location>({lat : 0, lng: 0});
+  const [currentSpeed, setCurrentSpeed] = useState<number>(0);
+  const { data: session } = useSession(); // Session for the user jwt
+  const [theme, setTheme] = useState<string>("");
+  const mapRef = useRef<LeaftletMap | null>(null);
   // Get current position
   useEffect(() => {
     const watchId = navigator.geolocation.watchPosition(
@@ -72,6 +78,7 @@ export default function Dashboard() {
     setTheme(localStorage.getItem("jeepTa-Theme") || "light");
   }, []);
   
+  // Change Theme
   const handleThemeChange = () => {
     // Get From the local storage
     if(localStorage.getItem("jeepTa-Theme") === "dark"){
@@ -83,12 +90,19 @@ export default function Dashboard() {
     }
   };
 
+  // Set View
+  const handleSetView = () => {
+    if(mapRef.current){
+      mapRef.current.flyTo([currentPosition.lat, currentPosition.lng], 14);
+    }
+  };
 
   if (currentPosition.lat === 0 && currentPosition.lng === 0) {
     return <Loading />;
   }
   return (
     <div className="w-screen h-dvh relative">
+      {/* Map */}
       <Suspense fallback={<Loading />}>
         <MapContainer
           center={[currentPosition.lat, currentPosition.lng]}
@@ -100,6 +114,7 @@ export default function Dashboard() {
           maxBoundsViscosity={1}
           minZoom={12}
           maxZoom={18}
+          ref={mapRef}
         >
           <TileLayer url={`https://{s}.basemaps.cartocdn.com/${theme}_all/{z}/{x}/{y}{r}.png`} />
           <CircleMarker
@@ -115,7 +130,7 @@ export default function Dashboard() {
         </MapContainer>   
       </Suspense>
 
-      {/* Top Left Corner Details */}
+      {/* Bottom Left Corner Details */}
       <div className="absolute bottom-0 left-0 z-1000">
         <div className="flex flex-col items-start gap-2 p-4">
           <div className="flex items-start gap-2 flex-col">
@@ -134,12 +149,12 @@ export default function Dashboard() {
       </div>
       
       {/* Top Right Corner Profile Details */}
-      <div className="absolute top-0 right-0 z-2000">
+      <div className="absolute top-0 right-0 z-1000">
         <div className="flex flex-col items-start gap-2 p-4 ">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="rounded-full">
-                <Avatar>
+              <Button variant="ghost" size="icon" className="rounded-full cursor-pointer">
+                <Avatar >
                   <AvatarImage src={session?.user?.image || ""} alt="User Profile" />
                   <AvatarFallback>{session?.user?.name?.charAt(0) || ""}</AvatarFallback>
                 </Avatar>
@@ -163,6 +178,18 @@ export default function Dashboard() {
 
         </div>
       </div>
+
+      {/* Controls */}
+      <div className="bottom-0 right-0 absolute z-1000">
+        <div className="flex flex-col items-start gap-2 p-4">
+          <Button onClick={handleSetView} className="cursor-pointer">My Location</Button>
+        </div>
+      </div>
+
+
     </div>
+
+
+
   );
 }
