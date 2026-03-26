@@ -17,14 +17,15 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       try {
         if(!profile) return false;
 
-        if(!profile.email || !profile.given_name || !profile.family_name) return false;
+        if(!profile.email) return false;
 
         const email = profile.email;
         const fullName = `${profile.given_name} ${profile.family_name}`;
+        const imageUrl = profile.picture;
         await prisma.user.upsert({
           where: { email },
-          update: { fullName },
-          create: { email, fullName },
+          update: { fullName, imageUrl },
+          create: { email, fullName, imageUrl },
         });
 
       } catch (error) {
@@ -32,6 +33,25 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         return false
       }
       return true
-    }
+    },
+
+
+    async jwt({ token, profile }) {
+      // runs on login
+      if (!profile) {
+        return token;
+      }
+      token.fullName = `${profile.given_name || ""} ${profile.family_name || ""}`;
+      token.imageUrl = profile.picture;
+      token.email = profile.email;
+
+      return token;
+    },
+
+    async session({ session, token }) {
+      // expose to frontend
+      if(!token) return session
+      return session;
+    },
   }
 });
