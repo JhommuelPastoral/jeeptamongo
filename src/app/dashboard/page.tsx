@@ -78,6 +78,7 @@ export default function Dashboard() {
             lat: newLat,
             lng: newLng,
           };
+          setGpsError(false);
         },
         (error) => {
           if (
