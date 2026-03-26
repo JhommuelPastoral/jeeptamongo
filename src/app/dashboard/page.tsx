@@ -20,6 +20,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import EnableLocationPermissionError from "./enableLocationPermissionError";
 
 type Location = {
   lat: number;
@@ -58,9 +59,8 @@ export default function Dashboard() {
               const speedMps = distance / timeDiff;
               const speedKmh = speedMps * 3.6;
 
-              // 🧠 Optional smoothing (reduce GPS jitter)
-              const smoothedSpeed =
-                speedKmh < 1 ? 0 : Number(speedKmh.toFixed(2));
+              // Optional smoothing (reduce GPS jitter)
+              const smoothedSpeed = speedKmh < 1 ? 0 : Number(speedKmh.toFixed(2));
 
               setCurrentSpeed(smoothedSpeed);
             }
@@ -80,6 +80,13 @@ export default function Dashboard() {
         },
         (error) => {
           console.error("Geolocation error:", error);
+          if (error.code === error.PERMISSION_DENIED) {
+            return <EnableLocationPermissionError />;
+          }
+
+          if (error.code === error.POSITION_UNAVAILABLE) {
+            return <EnableLocationPermissionError />;
+          }
         },
         {
           enableHighAccuracy: true,
@@ -95,7 +102,8 @@ export default function Dashboard() {
   useEffect(() => {
     setTheme(localStorage.getItem("jeepTa-Theme") || "light");
   }, []);
-  
+  console.log(currentPosition);
+  console.log(currentSpeed);
   // Change Theme
   const handleThemeChange = () => {
     // Get From the local storage
@@ -156,12 +164,12 @@ export default function Dashboard() {
               <div className="w-2 h-2 bg-red-500 rounded-full" />
               <p className={`${theme === "dark" ? "text-white" : "text-black"} text-sm`}>Current Position</p>
             </div>
-            <p className={`${theme === "dark" ? "text-white" : "text-black"} text-sm`}>Latitude: {currentPosition.lat.toFixed(2)}</p>
-            <p className={`${theme === "dark" ? "text-white" : "text-black"} text-sm`}>Longitude: {currentPosition.lng.toFixed(2)}</p>
+            <p className={`${theme === "dark" ? "text-white" : "text-black"} text-sm`}>Latitude: {currentPosition.lat.toFixed(5)}</p>
+            <p className={`${theme === "dark" ? "text-white" : "text-black"} text-sm`}>Longitude: {currentPosition.lng.toFixed(5)}</p>
           </div>
           <div className="flex items-center gap-2">
             <div className={`${theme === "dark" ? "bg-white" : "bg-black"} w-2 h-2 rounded-full`} />
-            <p className={`${theme === "dark" ? "text-white" : "text-black"} text-sm`}>Current Speed: {currentSpeed.toFixed(2)} Kmh </p>
+            <p className={`${theme === "dark" ? "text-white" : "text-black"} text-sm`}>Current Speed: {currentSpeed.toFixed(5)} Kmh </p>
           </div>
         </div>
       </div>
