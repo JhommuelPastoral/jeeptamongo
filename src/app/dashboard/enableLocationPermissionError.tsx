@@ -1,6 +1,8 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { NavigationOff } from 'lucide-react';
+
 export default function EnableLocationPermissionError() {
   const handleReload = () => {
     window.location.reload();
@@ -12,7 +14,7 @@ export default function EnableLocationPermissionError() {
         
         {/* Icon */}
         <div className="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center">
-          <span className="text-3xl">📍</span>
+          <NavigationOff color="#d75050" size={24}/>
         </div>
 
         {/* Title */}
@@ -27,7 +29,7 @@ export default function EnableLocationPermissionError() {
 
         {/* Steps */}
         <div className="text-xs text-muted-foreground text-left bg-muted p-4 rounded-lg w-full">
-          <p className="mb-2 font-medium">How to fix:</p>
+          <p className="mb-2 font-medium text-lg">How to fix:</p>
           <ul className="list-disc pl-4 space-y-1">
             <li>Turn on Location (GPS) on your device</li>
             <li>Allow location permission in your browser</li>
@@ -36,7 +38,7 @@ export default function EnableLocationPermissionError() {
         </div>
 
         {/* Button */}
-        <Button onClick={handleReload} className="w-full">
+        <Button onClick={handleReload} className="w-full cursor-pointer">
           Try Again
         </Button>
       </div>

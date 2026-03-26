@@ -37,6 +37,7 @@ export default function Dashboard() {
   const [theme, setTheme] = useState<string>("");
   const mapRef = useRef<LeaftletMap | null>(null);
   const [gpsError, setGpsError] = useState(false);
+
   // Get current position
   useEffect(() => {
       const watchId = navigator.geolocation.watchPosition(
@@ -101,6 +102,19 @@ export default function Dashboard() {
       return () => navigator.geolocation.clearWatch(watchId);
     }, []);
 
+  // Check if there is a update on the location
+  // useEffect(() => {
+  //   const interval = setInterval(() => {
+  //     const now = Date.now();
+
+  //     if (now - lastUpdate > 10000) {
+  //       setGpsError(true);
+  //     }
+  //   }, 3000);
+
+  //   return () => clearInterval(interval);
+  // }, [lastUpdate]);
+
   // Get Theme
   useEffect(() => {
     setTheme(localStorage.getItem("jeepTa-Theme") || "light");
@@ -124,18 +138,6 @@ export default function Dashboard() {
       mapRef.current.flyTo([currentPosition.lat, currentPosition.lng], 14);
     }
   };
-  // Check if there is a update on the location
-  useEffect(() => {
-    const interval = setInterval(() => {
-      const now = Date.now();
-
-      if (now - lastUpdate > 10000) {
-        setGpsError(true);
-      }
-    }, 3000);
-
-    return () => clearInterval(interval);
-  }, [lastUpdate]);
 
 
   if(gpsError) return <EnableLocationPermissionError />
