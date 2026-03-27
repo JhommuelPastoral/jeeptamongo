@@ -225,7 +225,7 @@ export default function Dashboard() {
       {/* Controls */}
       <div className="bottom-0 right-0 absolute z-1000">
         <div className="flex flex-col items-start gap-2 p-4">
-          <Button onClick={handleSetView} className="cursor-pointer">Are you Lost?</Button>
+          <Button onClick={handleSetView} className="cursor-pointer">Am I Lost?</Button>
         </div>
       </div>
 

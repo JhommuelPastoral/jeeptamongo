@@ -2,6 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { NavigationOff } from 'lucide-react';
+import Link from "next/link";
 
 export default function EnableLocationPermissionError() {
   const handleReload = () => {
@@ -36,6 +37,10 @@ export default function EnableLocationPermissionError() {
             <li>Refresh this page</li>
           </ul>
         </div>
+        {/* Docs */}
+        <Link href={"/docs/userguide"}>
+          <p className="text-xs underline">Read the Documentation</p>
+        </Link>
 
         {/* Button */}
         <Button onClick={handleReload} className="w-full cursor-pointer">
