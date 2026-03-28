@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
+import { useState, useMemo, useTransition } from "react";
 
 import {
   Drawer,
@@ -13,7 +13,8 @@ import {
   DrawerTitle,
   DrawerTrigger,
 } from "@/components/ui/drawer";
-import { LoaderCircle } from 'lucide-react';
+
+import { LoaderCircle } from "lucide-react";
 
 import {
   Command,
@@ -23,77 +24,74 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
-import {useGetJeepStops} from "@/apiHandler/jeepStopApiHandler";
+
+import { useGetJeepStops } from "@/apiHandler/jeepStopApiHandler";
 import { useFindRoute } from "@/apiHandler/findRouteApiHandler";
 import { toast } from "sonner";
 
-type JeepStopPros ={
+type JeepStopProps = {
   id: string;
   name: string;
-}
+};
 
 export default function DirectionButton() {
   const [openDrawer, setOpenDrawer] = useState(false);
+
+  // separate fast input vs heavy state
+  const [searchFrom, setSearchFrom] = useState("");
+  const [searchTo, setSearchTo] = useState("");
+
   const [directionFrom, setDirectionFrom] = useState("");
   const [directionTo, setDirectionTo] = useState("");
+
   const [openListDirectionFrom, setOpenListDirectionFrom] = useState(true);
   const [openListDirectionTo, setOpenListDirectionTo] = useState(true);
 
-  
-  // Fetch jeep stops
-  const { data: jeepStopsData, isLoading: jeepStopsLoading, isError: jeepStopsError } = useGetJeepStops();
+  const [isPending, startTransition] = useTransition();
+
+  const { data: jeepStopsData, isLoading, isError } = useGetJeepStops();
   const { mutate: findRouteMutate, isPending: findRouteLoading } = useFindRoute();
 
-  const handleSubmit = async () => {
+  // FILTER + LIMIT For Optimization since we do have a lot of data.
+  const filteredFromStops = useMemo(() => {
+    return jeepStopsData
+      ?.filter((stop: JeepStopProps) =>
+        stop.name.toLowerCase().includes(directionFrom.toLowerCase())
+      )
+      .slice(0, 20);
+  }, [jeepStopsData, directionFrom]);
+
+  const filteredToStops = useMemo(() => {
+    return jeepStopsData
+      ?.filter((stop: JeepStopProps) =>
+        stop.name.toLowerCase().includes(directionTo.toLowerCase())
+      )
+      .slice(0, 20);
+  }, [jeepStopsData, directionTo]);
+
+  const handleSubmit = () => {
     if (!directionFrom || !directionTo) {
-      toast.warning("Please select starting point and destination", {
-        duration: 3000,
-        position: "top-center",
-        style: {
-          background: "#6388F8",
-          color: "#ffff",
-        }
-      });
+      toast.warning("Please select starting point and destination");
       return;
     }
 
-    findRouteMutate({fromDirection: directionFrom, toDirection: directionTo}, {
-      onSuccess: () => {
-        toast.success("Route found successfully", {
-          duration: 3000,
-          position: "top-center",
-          style: {
-            background: "#6388F8",
-            color: "#ffff",
-          }
-        });
+    findRouteMutate(
+      { fromDirection: directionFrom, toDirection: directionTo },
+      {
+        onSuccess: () => toast.success("Route found successfully"),
+        onError: () => toast.error("Error finding route"),
       },
-      onError: () => {
-        toast.error("Error finding route", {
-          duration: 3000,
-          position: "top-center",
-          style: {
-            background: "#6388F8",
-            color: "#ffff",
-          }
-        });
-      }
-    });
-
-    // setOpenDrawer(false);
+    );
   };
 
   return (
     <div>
       <Drawer open={openDrawer} onOpenChange={setOpenDrawer}>
         <DrawerTrigger asChild>
-          <Button className="cursor-pointer">Get Direction</Button>
+          <Button>Get Direction</Button>
         </DrawerTrigger>
 
-        <DrawerContent className="px-4 pb-6 z-1001">
-          {/* Handle */}
-          <div className="mx-auto mt-2 h-1 w-30 rounded-full bg-gray-400" />
-
+        <DrawerContent className="px-4 pb-6">
           <DrawerHeader className="px-0">
             <DrawerTitle>Direction</DrawerTitle>
             <DrawerDescription>
@@ -101,109 +99,114 @@ export default function DirectionButton() {
             </DrawerDescription>
           </DrawerHeader>
 
-          {/* FORM */}
-          <div className="space-y-4 mt-2 no-scrollbar overflow-y-auto">
+          <div className="space-y-4 mt-2 overflow-y-auto">
             {/* FROM */}
-            <div className="space-y-2">
+            <div>
               <p className="text-sm font-medium">From:</p>
-              <div className="border rounded-lg overflow-hidden">
+              <div className="border rounded-lg ">
                 <Command>
                   <CommandInput
                     placeholder="Search location..."
-                    disabled={jeepStopsLoading || jeepStopsError}
-                    value={directionFrom}
+                    value={searchFrom}
+                    disabled={isLoading || isError}
                     onValueChange={(value) => {
+                      setSearchFrom(value);
+
+                      startTransition(() => {
+                        setDirectionFrom(value);
+                      });
+
                       setOpenListDirectionFrom(true);
-                      setDirectionFrom(value);
+                      setOpenListDirectionTo(false);
                     }}
                   />
 
                   {openListDirectionFrom && (
                     <CommandList className="max-h-40">
-                      {jeepStopsLoading && (
-                        <div className="p-3 text-sm text-muted-foreground flex items-center gap-2">
-                          <LoaderCircle className="w-4 h-4 text-muted-foreground animate-spin" />
-                          Loading Jeepney Stops ... 
-                        </div>
-                      )}
+                      {isLoading && <div className="p-2">Loading...</div>}
+                      {isError && <div className="p-2 text-red-500">Error</div>}
 
-                      {jeepStopsError && (
-                        <div className="p-3 text-sm text-red-500">
-                          Failed to load stops
-                        </div>
-                      )}
-                      {!jeepStopsLoading && !jeepStopsError && (
-                        <>
-                          <CommandEmpty>No results found.</CommandEmpty>
-                            <CommandGroup>
-                              {jeepStopsData?.map((stop: JeepStopPros) => (
-                                <CommandItem
-                                  key={stop.id}
-                                  value={stop.name}
-                                  onSelect={(value) => {
-                                    setDirectionFrom(value);
-                                    setOpenListDirectionFrom(false);
-                                  }}
-                                >
-                                  {stop.name}
-                                </CommandItem>
-                              ))}
-                            </CommandGroup>
-                        </>
-                      )}
-                    </CommandList>
-                  )}
-                </Command>
-              </div>
-            </div>
-            {/* TO */}
-            <div className="space-y-2">
-              <p className="text-sm font-medium">TO:</p>
-              <div className="border rounded-lg overflow-hidden">
-                <Command>
-                  <CommandInput
-                    placeholder="Search location..."
-                    value={directionTo}
-                    disabled={jeepStopsLoading || jeepStopsError}
-                    onValueChange={(value)=> {
-                      setOpenListDirectionTo(true);
-                      setDirectionTo(value);
-                    }}
-                  />
-                  {openListDirectionTo && (
-                    <CommandList className="max-h-40">
-                      {jeepStopsLoading && (
-                        <div className="p-3 text-sm text-muted-foreground flex items-center gap-2">
-                          <LoaderCircle className="w-4 h-4 text-muted-foreground animate-spin" />
-                          Loading Jeepney Stops ... 
-                        </div>
-                      )}
-
-                      {jeepStopsError && (
-                        <div className="p-3 text-sm text-red-500">
-                          Failed to load stops
-                        </div>
-                      )}                    
-                      {!jeepStopsLoading && !jeepStopsError && (
+                      {!isLoading && !isError && (
                         <>
                           <CommandEmpty>No results found.</CommandEmpty>
                           <CommandGroup>
-                            {jeepStopsData?.map((stop: JeepStopPros) => (
+                            {filteredFromStops?.map((stop : JeepStopProps) => (
                               <CommandItem
-                                key={stop?.id}
-                                value={stop?.name}
+                                key={stop.id}
+                                value={stop.name}
                                 onSelect={(value) => {
-                                  setDirectionTo(value);
-                                  setOpenListDirectionTo(false);
+                                  setDirectionFrom(value);
+                                  setSearchFrom(value);
+                                  setOpenListDirectionFrom(false);
                                 }}
                               >
-                                {stop?.name}
+                                {stop.name}
                               </CommandItem>
                             ))}
                           </CommandGroup>
                         </>
                       )}
 
+                      {isPending && (
+                        <div className="p-2 text-xs text-muted-foreground">
+                          Filtering...
+                        </div>
+                      )}
+                    </CommandList>
+                  )}
+                </Command>
+              </div>
+            </div>
+
+            {/* TO */}
+            <div>
+              <p className="text-sm font-medium">To:</p>
+              <div className="border rounded-lg">
+                <Command>
+                  <CommandInput
+                    placeholder="Search location..."
+                    value={searchTo}
+                    disabled={isLoading || isError}
+                    onValueChange={(value) => {
+                      setSearchTo(value);
+
+                      startTransition(() => {
+                        setDirectionTo(value);
+                      });
+
+                      setOpenListDirectionTo(true);
+                      setOpenListDirectionFrom(false);
+                    }}
+                  />
+
+                  {openListDirectionTo && (
+                    <CommandList className="max-h-40">
+                      {!isLoading && !isError && (
+                        <>
+                          <CommandEmpty>No results found.</CommandEmpty>
+                          <CommandGroup>
+                            {filteredToStops?.map((stop : JeepStopProps) => (
+                              <CommandItem
+                                key={stop.id}
+                                value={stop.name}
+                                onSelect={(value) => {
+                                  setDirectionTo(value);
+                                  setSearchTo(value);
+                                  setOpenListDirectionTo(false);
+                                }}
+                              >
+                                {stop.name}
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </>
+                      )}
+
+                      {isPending && (
+                        <div className="p-2 text-xs text-muted-foreground">
+                          Filtering...
+                        </div>
+                      )}
                     </CommandList>
                   )}
                 </Command>
@@ -211,20 +214,13 @@ export default function DirectionButton() {
             </div>
           </div>
 
-          {/* ACTIONS */}
           <DrawerFooter className="px-0 mt-4">
-            <Button className="w-full" onClick={handleSubmit} disabled ={!directionFrom || !directionTo || findRouteLoading}>
-              {findRouteLoading ? 
-                <div className="flex items-center gap-2">
-                  <LoaderCircle className="w-4 h-4 text-muted-foreground animate-spin" />
-                  Finding Route ...
-                </div> :
-                <p>
-                  Find Route
-                </p>
-
-              }
-
+            <Button
+              className="w-full"
+              onClick={handleSubmit}
+              disabled={!directionFrom || !directionTo || findRouteLoading}
+            >
+              {findRouteLoading ? "Finding Route..." : "Find Route"}
             </Button>
 
             <DrawerClose asChild>
