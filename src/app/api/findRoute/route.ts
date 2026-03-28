@@ -30,6 +30,7 @@ export async function POST(req: Request) {
     // Direct Route Found 
     if (fromRouteStops[0].routeId === toRouteStops[0].routeId ) {
       const isReversed = fromRouteStops[0].order > toRouteStops[0].order;
+      const maxLimit = Math.max(fromRouteStops[0].order, toRouteStops[0].order);
       const route = await prisma.routeStop.findMany({
         where: { routeId: fromRouteStops[0].routeId },
         orderBy: { order: isReversed ? "desc" : "asc" },
@@ -45,7 +46,8 @@ export async function POST(req: Request) {
             }
           },
           route: true
-        }
+        },
+        take: maxLimit
       });
 
       const reversedArray = [];

@@ -8,7 +8,7 @@ import type { Map as LeaftletMap } from "leaflet";
 const MapContainer = dynamic(() => import("react-leaflet").then((mod) => mod.MapContainer),{ ssr: false });
 const TileLayer = dynamic(() => import("react-leaflet").then((mod) => mod.TileLayer),{ ssr: false });
 const CircleMarker = dynamic(() => import("react-leaflet").then((mod) => mod.CircleMarker),{ ssr: false });
-
+const Polyline = dynamic(() => import("react-leaflet").then((mod) => mod.Polyline),{ ssr: false });
 import { signOut } from "next-auth/react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useSession } from "next-auth/react";
@@ -34,6 +34,8 @@ type Location = {
   lng: number;
 };
 
+type Position = [number, number];
+
 export default function Dashboard() {
   const [currentPosition, setCurrentPosition] = useState<Location>({ lat: 0, lng: 0 });
   const prevTimeRef = useRef<number>(0);
@@ -43,7 +45,7 @@ export default function Dashboard() {
   const [theme, setTheme] = useState<string>("");
   const mapRef = useRef<LeaftletMap | null>(null);
   const [gpsError, setGpsError] = useState(false);
-
+  const [position, setPosition] = useState<Position[]>([]);
 
   // Get current position
   useEffect(() => {
@@ -131,6 +133,7 @@ export default function Dashboard() {
       mapRef.current.flyTo([currentPosition.lat, currentPosition.lng], 14);
     }
   };
+  console.log(position);
 
   if(gpsError) return <EnableLocationPermissionError />
 
@@ -138,7 +141,6 @@ export default function Dashboard() {
     return <Loading title="map"/>;
   }
   if(!session) return <Loading title="session" />
-  
   return (
     <div className="w-screen h-dvh relative">
       {/* Map */}
@@ -166,6 +168,13 @@ export default function Dashboard() {
             }}
             className="animate-pulse"
           />        
+          {position && (
+            <Polyline 
+              positions={position}
+              color={theme === "dark" ? "white" : "black"}
+              weight={3}
+            />
+          )}
         </MapContainer>   
       </Suspense>
 
@@ -229,10 +238,10 @@ export default function Dashboard() {
       <div className="bottom-0 right-0 absolute">
         <div className="flex flex-col items-start gap-2 p-4">
           <Button onClick={handleSetView} className="cursor-pointer w-full">Am I Lost?</Button>
-          <DirectionButton/>
+          <DirectionButton setPosition={setPosition} mapRef={mapRef}/>
         </div>
       </div>
-
+      
     </div>
   );
 }

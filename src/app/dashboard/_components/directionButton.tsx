@@ -1,8 +1,8 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { useState, useMemo, useTransition } from "react";
-
+import { useState, useMemo, useTransition, useEffect } from "react";
+import type { Map as LeaftletMap } from "leaflet";
 import {
   Drawer,
   DrawerClose,
@@ -34,20 +34,38 @@ type JeepStopProps = {
   name: string;
 };
 
-export default function DirectionButton() {
-  const [openDrawer, setOpenDrawer] = useState(false);
+type Position = [number, number];
 
-  const [searchFrom, setSearchFrom] = useState("");
-  const [searchTo, setSearchTo] = useState("");
+type RawPosition ={
+  id: string;
+  routeId: string;
+  stopId: string;
+  order: number;
+  stop:{
+    id: string;
+    name: string;
+    position: [{lat: number, lng: number}];
+  };
+  route: {
+    id: string;
+    name: string;
+  };
+}
 
-  const [directionFrom, setDirectionFrom] = useState("");
-  const [directionTo, setDirectionTo] = useState("");
+export default function DirectionButton({setPosition, mapRef}: {setPosition: (position: Position[]) => void, mapRef: React.RefObject<LeaftletMap | null>}) {
+  const [openDrawer, setOpenDrawer] = useState<boolean>(false);
 
-  const [openListDirectionFrom, setOpenListDirectionFrom] = useState(true);
-  const [openListDirectionTo, setOpenListDirectionTo] = useState(true);
+  const [searchFrom, setSearchFrom] = useState<string>("");
+  const [searchTo, setSearchTo] = useState<string>("");
+
+  const [directionFrom, setDirectionFrom] = useState<string>("");
+  const [directionTo, setDirectionTo] = useState<string>("");
+
+  const [openListDirectionFrom, setOpenListDirectionFrom] = useState<boolean>(true);
+  const [openListDirectionTo, setOpenListDirectionTo] = useState<boolean>(true);
 
   const [isPending, startTransition] = useTransition();
-
+  const [rawPosition, setRawPosition] = useState<RawPosition[]>([]);
   const { data: jeepStopsData, isLoading, isError } = useGetJeepStops();
   const { mutate: findRouteMutate, isPending: findRouteLoading } = useFindRoute();
 
@@ -68,6 +86,22 @@ export default function DirectionButton() {
       .slice(0, 20);
   }, [jeepStopsData, directionTo]);
 
+  useEffect(() => {
+    if (!rawPosition) return;
+
+    const filtered = rawPosition
+      ?.map((raw: RawPosition) => {
+        return raw?.stop?.position?.map((pos: { lat: number; lng: number }) => [
+          pos?.lat,
+          pos?.lng,
+        ] as Position);
+      })
+      .flat();
+    mapRef.current?.flyTo([filtered[0][0], filtered[0][1]], 18);
+    setPosition(filtered);
+    setOpenDrawer(false);
+  }, [rawPosition, setPosition]);
+
   const handleSubmit = () => {
     if (!directionFrom || !directionTo) {
       toast.warning("Please select starting point and destination");
@@ -77,9 +111,12 @@ export default function DirectionButton() {
     findRouteMutate(
       { fromDirection: directionFrom, toDirection: directionTo },
       {
-        onSuccess: () => toast.success("Route found successfully", {
+        onSuccess: (data) => {
+          toast.success("Route found successfully", {
           position: "top-center"
-        }),
+        });
+          setRawPosition(data?.route);
+        },
         onError: () => toast.error("Error finding route",{
           position: "top-center"
         }),
