@@ -78,8 +78,12 @@ export default function DirectionButton() {
     findRouteMutate(
       { fromDirection: directionFrom, toDirection: directionTo },
       {
-        onSuccess: () => toast.success("Route found successfully"),
-        onError: () => toast.error("Error finding route"),
+        onSuccess: () => toast.success("Route found successfully", {
+          position: "top-center"
+        }),
+        onError: () => toast.error("Error finding route",{
+          position: "top-center"
+        }),
       },
     );
   };
@@ -91,7 +95,7 @@ export default function DirectionButton() {
           <Button>Get Direction</Button>
         </DrawerTrigger>
 
-        <DrawerContent className="px-4 pb-6">
+        <DrawerContent className="px-4 pb-[env(safe-area-inset-bottom)] max-h-[85dvh] flex flex-col z-1003">
           <DrawerHeader className="px-0">
             <DrawerTitle>Direction</DrawerTitle>
             <DrawerDescription>
@@ -99,7 +103,7 @@ export default function DirectionButton() {
             </DrawerDescription>
           </DrawerHeader>
 
-          <div className="space-y-4 mt-2 overflow-y-auto">
+          <div className="space-y-4 mt-2 overflow-y-auto flex-1">
             {/* FROM */}
             <div>
               <p className="text-sm font-medium">From:</p>

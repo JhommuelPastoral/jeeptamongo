@@ -72,7 +72,7 @@ export default function Dashboard() {
               // Optional smoothing (reduce GPS jitter)
               const smoothedSpeed = speedKmh < 1 ? 0 : Number(speedKmh.toFixed(2));
 
-              setCurrentSpeed(smoothedSpeed);
+              setCurrentSpeed(position.coords.speed ?? smoothedSpeed);
             }
           }
 
@@ -182,7 +182,7 @@ export default function Dashboard() {
           </div>
           <div className="flex items-center gap-2">
             <div className={`${theme === "dark" ? "bg-white" : "bg-black"} w-2 h-2 rounded-full`} />
-            <p className={`${theme === "dark" ? "text-white" : "text-black"} text-sm`}>Current Speed: {currentSpeed.toFixed(2)} Kmh </p>
+            <p className={`${theme === "dark" ? "text-white" : "text-black"} text-sm`}>Current Speed: {currentSpeed.toFixed(5)} m/s </p>
           </div>
         </div>
       </div>
