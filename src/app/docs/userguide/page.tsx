@@ -29,7 +29,7 @@ export default function UserGuide() {
               width={400}
               height={400}
               className="w-full max-w-xs h-auto rounded-lg shadow"
-              priority
+              loading="eager"
             />
             <Image
               src="/docs/step-2.png"
@@ -37,7 +37,7 @@ export default function UserGuide() {
               width={400}
               height={400}
               className="w-full max-w-xs h-auto rounded-lg shadow"
-              priority
+              loading="eager"
             />
             <Image
               src="/docs/step-3.png"
@@ -45,7 +45,7 @@ export default function UserGuide() {
               width={400}
               height={400}
               className="w-full max-w-xs h-auto rounded-lg shadow"
-              priority
+              loading="eager"
             />
           </div>
         </section>
@@ -63,7 +63,7 @@ export default function UserGuide() {
               width={400}
               height={400}
               className="w-full max-w-xs h-auto rounded-lg shadow"
-              priority
+              loading="eager"
             />          
           </div>
         </section>

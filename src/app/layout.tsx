@@ -5,6 +5,8 @@ import { cn } from "@/lib/utils";
 import QueryProvider from "@/lib/queryProvider";
 import { SessionProvider } from "next-auth/react";
 import "leaflet/dist/leaflet.css";
+import { Toaster } from "@/components/ui/sonner"
+
 const jetbrainsMono = JetBrains_Mono({subsets:['latin'],variable:'--font-mono'});
 
 const geistSans = Geist({
@@ -39,6 +41,7 @@ export default function RootLayout({
         <QueryProvider>
           <SessionProvider>{children}</SessionProvider>
         </QueryProvider>
+        <Toaster/>
       </body>
     </html>
   );

@@ -23,7 +23,8 @@ export default function NotFound() {
             width={200}
             height={200}
             className="w-full max-w-20 h-auto rounded-lg shadow"
-            priority
+            loading="lazy"
+            unoptimized
           />
 
           <h2 className="text-2xl font-semibold mt-3 text-center">

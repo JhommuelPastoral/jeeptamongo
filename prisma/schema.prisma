@@ -21,20 +21,17 @@ model User{
   imageUrl String
 }
 
-model Jeep{
+model JeepRoute{
   id String @id @default(auto()) @map("_id") @db.ObjectId
   name String 
-  stops Stop[]
+  stops RouteStop[]
 }
 
 model Stop{
   id String @id @default(auto()) @map("_id") @db.ObjectId
   name String
-  start String 
-  end String 
-  jeepId String @db.ObjectId
-  jeep Jeep @relation(fields: [jeepId], references: [id])
   position Position[]
+  routes RouteStop[]
 }
 
 model Position{
@@ -43,5 +40,13 @@ model Position{
   lng Float 
   stopId String @db.ObjectId
   stop Stop @relation(fields: [stopId], references: [id])
-  
+}
+
+model RouteStop {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  routeId   String   @db.ObjectId
+  stopId    String   @db.ObjectId
+  order     Int     
+  route     JeepRoute @relation(fields: [routeId], references: [id])
+  stop      Stop      @relation(fields: [stopId], references: [id])
 }

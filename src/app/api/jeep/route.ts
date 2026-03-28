@@ -1,37 +1,29 @@
-import prisma from "@/lib/prisma";
 import { NextResponse } from "next/server";
+import prisma from "@/lib/prisma";
 
-export async function POST(request: Request) {
+
+export async function POST(req:Request) {
   try {
-    const {name} = await request.json()
-    const jeep = await prisma.jeep.create({
+    const {name} = await req.json();
+
+    const jeep = await prisma.jeepRoute.create({
       data: {
-        name: name
+        name
       }
     });
-    return NextResponse.json({message: "success"}, {status: 200})
+    return NextResponse.json({message:"Jeep created successfully"}, {status:200});
   } catch (error) {
-    console.log("Post Jeep Error", error);
-    return NextResponse.json({message: "error", error}, {status: 500})
+    console.log("Error creating jeep", error);
+    return NextResponse.json({message:"Error creating jeep"}, {status:500});
   }
 }
 
-export async function GET(request:Request) {
+export async function GET(req:Request){
   try {
-    const jeeps = await prisma.jeep.findMany({
-      include: {
-        stops: {
-          include: {
-            position: true
-          }
-        },
-      }
-    }
-    );
-    console.log();
-    return NextResponse.json({message: "success", jeeps}, {status: 200})
+    const jeeps = await prisma.jeepRoute.findMany();
+    return NextResponse.json({message:"Jeeps fetched successfully", jeeps}, {status:200});
   } catch (error) {
-    console.log("Get Jeep Error", error);
-    return NextResponse.json({message: "error", error}, {status: 500})
+    console.log("Error fetching jeeps", error);
+    return NextResponse.json({message:"Error fetching jeeps"}, {status:500});
   }
 }

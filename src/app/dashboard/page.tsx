@@ -8,6 +8,7 @@ import type { Map as LeaftletMap } from "leaflet";
 const MapContainer = dynamic(() => import("react-leaflet").then((mod) => mod.MapContainer),{ ssr: false });
 const TileLayer = dynamic(() => import("react-leaflet").then((mod) => mod.TileLayer),{ ssr: false });
 const CircleMarker = dynamic(() => import("react-leaflet").then((mod) => mod.CircleMarker),{ ssr: false });
+
 import { signOut } from "next-auth/react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useSession } from "next-auth/react";
@@ -21,7 +22,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import EnableLocationPermissionError from "./_components/enableLocationPermissionError";
-
+import DirectionButton from "./_components/directionButton";
 import {
   HoverCard,
   HoverCardContent,
@@ -42,6 +43,7 @@ export default function Dashboard() {
   const [theme, setTheme] = useState<string>("");
   const mapRef = useRef<LeaftletMap | null>(null);
   const [gpsError, setGpsError] = useState(false);
+
 
   // Get current position
   useEffect(() => {
@@ -130,16 +132,17 @@ export default function Dashboard() {
     }
   };
 
-
   if(gpsError) return <EnableLocationPermissionError />
 
   if (currentPosition.lat === 0 && currentPosition.lng === 0) {
-    return <Loading />;
+    return <Loading title="map"/>;
   }
+  if(!session) return <Loading title="session" />
+  
   return (
     <div className="w-screen h-dvh relative">
       {/* Map */}
-      <Suspense fallback={<Loading />}>
+      <Suspense fallback={<Loading title="map" />}>
         <MapContainer
           center={[currentPosition.lat, currentPosition.lng]}
           zoom={14}
@@ -193,8 +196,8 @@ export default function Dashboard() {
                 <HoverCard openDelay={10} closeDelay={100}>
                   <HoverCardTrigger asChild>
                     <Avatar >
-                      <AvatarImage src={session?.user?.image || ""} alt="User Profile" />
-                      <AvatarFallback>{session?.user?.name?.charAt(0) || ""}</AvatarFallback>
+                      <AvatarImage src={session?.user?.image ?? ""} alt="User Profile" />
+                      <AvatarFallback className="bg-amber-400 text-black">{session?.user?.name?.charAt(0) || ""}</AvatarFallback>
                     </Avatar>
                   </HoverCardTrigger>
                   <HoverCardContent side="left" align="center" className="text-center p-2 z-1001 " >
@@ -223,16 +226,13 @@ export default function Dashboard() {
       </div>
 
       {/* Controls */}
-      <div className="bottom-0 right-0 absolute z-1000">
+      <div className="bottom-0 right-0 absolute">
         <div className="flex flex-col items-start gap-2 p-4">
-          <Button onClick={handleSetView} className="cursor-pointer">Am I Lost?</Button>
+          <Button onClick={handleSetView} className="cursor-pointer w-full">Am I Lost?</Button>
+          <DirectionButton/>
         </div>
       </div>
 
-
     </div>
-
-
-
   );
 }
