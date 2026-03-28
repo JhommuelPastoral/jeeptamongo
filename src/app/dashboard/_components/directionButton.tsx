@@ -37,7 +37,6 @@ type JeepStopProps = {
 export default function DirectionButton() {
   const [openDrawer, setOpenDrawer] = useState(false);
 
-  // separate fast input vs heavy state
   const [searchFrom, setSearchFrom] = useState("");
   const [searchTo, setSearchTo] = useState("");
 
@@ -90,7 +89,7 @@ export default function DirectionButton() {
 
   return (
     <div>
-      <Drawer open={openDrawer} onOpenChange={setOpenDrawer}>
+      <Drawer open={openDrawer} onOpenChange={setOpenDrawer} modal={false} fixed>
         <DrawerTrigger asChild>
           <Button>Get Direction</Button>
         </DrawerTrigger>
