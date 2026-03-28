@@ -89,12 +89,12 @@ export default function DirectionButton() {
 
   return (
     <div>
-      <Drawer open={openDrawer} onOpenChange={setOpenDrawer} modal={false} fixed>
+      <Drawer open={openDrawer} onOpenChange={setOpenDrawer} fixed>
         <DrawerTrigger asChild>
           <Button>Get Direction</Button>
         </DrawerTrigger>
 
-        <DrawerContent className="px-4 pb-[env(safe-area-inset-bottom)] h-dvh flex flex-col z-1003">
+        <DrawerContent className="px-4 pb-[env(safe-area-inset-bottom)] flex flex-col z-1003">
           <DrawerHeader className="px-0">
             <DrawerTitle>Direction</DrawerTitle>
             <DrawerDescription>
