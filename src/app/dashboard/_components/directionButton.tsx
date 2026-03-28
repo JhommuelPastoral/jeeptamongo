@@ -95,7 +95,7 @@ export default function DirectionButton() {
           <Button>Get Direction</Button>
         </DrawerTrigger>
 
-        <DrawerContent className="px-4 pb-[env(safe-area-inset-bottom)] max-h-[85dvh] flex flex-col z-1003">
+        <DrawerContent className="px-4 pb-[env(safe-area-inset-bottom)] h-dvh flex flex-col z-1003">
           <DrawerHeader className="px-0">
             <DrawerTitle>Direction</DrawerTitle>
             <DrawerDescription>
