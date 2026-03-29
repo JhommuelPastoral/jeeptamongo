@@ -172,7 +172,7 @@ export default function DirectionButton({setPosition, mapRef}: DirectButtonFunct
           <Button>Get Direction</Button>
         </DrawerTrigger>
 
-        <DrawerContent className="px-4 pb-[env(safe-area-inset-bottom)] flex flex-col h-[85dvh] max-h-[85dvh] z-1003">
+        <DrawerContent className="px-4 pb-[env(safe-area-inset-bottom)] flex flex-col  max-h-[85svh] z-1003">
           <DrawerHeader className="px-0">
             <DrawerTitle>Direction</DrawerTitle>
             <DrawerDescription>
@@ -180,7 +180,7 @@ export default function DirectionButton({setPosition, mapRef}: DirectButtonFunct
             </DrawerDescription>
           </DrawerHeader>
 
-          <div className="space-y-4 mt-2 overflow-y-auto max-h-[60dvh]">
+          <div className="space-y-4 mt-2 overflow-y-auto flex-1 min-h-0">
             {/* FROM */}
             <div>
               <p className="text-sm font-medium">From:</p>

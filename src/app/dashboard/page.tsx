@@ -167,7 +167,7 @@ export default function Dashboard() {
             }}
             className="animate-pulse"
           />        
-          {position && (
+          {position.length > 0 && (
             <Polyline 
               positions={position}
               color={theme === "dark" ? "white" : "black"}
