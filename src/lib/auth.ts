@@ -28,16 +28,18 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             update: { fullName, imageUrl },
             create: { email, fullName, imageUrl },
           });
+
         }
-        // For GitHub
-        const email = profile.email;
-        const fullName = profile.name || "";
-        const imageUrl = profile.avatar_url as string || "";
-        await prisma.user.upsert({
-          where: { email },
-          update: { fullName, imageUrl },
-          create: { email, fullName, imageUrl },
-        });
+        else if(provider === "github"){
+          const email = profile.email;
+          const fullName = profile.name || "";
+          const imageUrl = profile.avatar_url as string || "";
+          await prisma.user.upsert({
+            where: { email },
+            update: { fullName, imageUrl },
+            create: { email, fullName, imageUrl },
+          });
+        }
 
       } catch (error) {
         console.log("Sign in error", error);
@@ -53,7 +55,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         return token;
       }
       token.fullName = `${profile.given_name || ""} ${profile.family_name || ""}`;
-      token.imageUrl = profile.picture ?? profile.avatar_url as string;
+      token.imageUrl = profile.picture ?? profile.avatar_url as string ?? "";
       token.email = profile.email;
 
       return token;
@@ -62,7 +64,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     async session({ session, token }) {
       // expose to frontend
       if(!token) return session
-
+      session.user.name = token.fullName as string;
+      session.user.email = token.email as string;
+      session.user.image = token.imageUrl as string;
       return session;
     },
   }
