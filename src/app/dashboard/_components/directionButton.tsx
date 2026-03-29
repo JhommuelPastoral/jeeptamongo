@@ -167,7 +167,7 @@ export default function DirectionButton({setPosition, mapRef}: DirectButtonFunct
 
   return (
     <div>
-      <Drawer open={openDrawer} onOpenChange={setOpenDrawer} fixed>
+      <Drawer open={openDrawer} onOpenChange={setOpenDrawer} fixed ={false}>
         <DrawerTrigger asChild>
           <Button>Get Direction</Button>
         </DrawerTrigger>
