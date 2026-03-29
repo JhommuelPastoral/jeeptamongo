@@ -52,7 +52,13 @@ type RawPosition ={
   };
 }
 
-export default function DirectionButton({setPosition, mapRef}: {setPosition: (position: Position[]) => void, mapRef: React.RefObject<LeaftletMap | null>}) {
+type DirectButtonFunctionProps = {
+  setPosition: (position: Position[]) => void;
+  mapRef: React.RefObject<LeaftletMap | null>;
+}
+
+
+export default function DirectionButton({setPosition, mapRef}: DirectButtonFunctionProps ) {
   const [openDrawer, setOpenDrawer] = useState<boolean>(false);
 
   const [searchFrom, setSearchFrom] = useState<string>("");
@@ -86,25 +92,60 @@ export default function DirectionButton({setPosition, mapRef}: {setPosition: (po
       .slice(0, 20);
   }, [jeepStopsData, directionTo]);
 
+
+  // Filter the jeep stops, send to parent
   useEffect(() => {
-    if (!rawPosition) return;
+    if (rawPosition?.length === 0) return;
 
     const filtered = rawPosition
       ?.map((raw: RawPosition) => {
         return raw?.stop?.position?.map((pos: { lat: number; lng: number }) => [
           pos?.lat,
           pos?.lng,
-        ] as Position);
+        ] as Position) ?? [];
       })
       .flat();
-    mapRef.current?.flyTo([filtered[0][0], filtered[0][1]], 18);
+    // Check if filtered is empty
+    if (filtered?.length === 0) return;
+    mapRef.current?.flyTo(filtered[0], 18);
     setPosition(filtered);
     setOpenDrawer(false);
-  }, [rawPosition, setPosition]);
+  }, [rawPosition, setPosition, mapRef]);
+
+
+  // Convert jeep stops to set for fast search
+  const stopNames = useMemo(() => {
+    const mapStops = new Map();
+
+    jeepStopsData?.forEach((stop: JeepStopProps) => {
+      mapStops.set(stop.name.toLowerCase(), stop.id);
+    });
+    return mapStops;
+
+  }, [jeepStopsData]);
 
   const handleSubmit = () => {
+
     if (!directionFrom || !directionTo) {
-      toast.warning("Please select starting point and destination");
+      toast.warning("Please select starting point and destination",{
+        position: "top-center"
+      });
+      return;
+    }
+
+    // Check if the starting point and destination are the same
+    if(directionFrom === directionTo) {
+      toast.warning("Starting point and destination cannot be the same",{
+        position: "top-center"
+      });
+      return;
+    }
+
+    // check if the input is in the jeepStop Data
+    if(!stopNames.has(directionFrom.toLowerCase()) || !stopNames.has(directionTo.toLowerCase())) {
+      toast.warning("Select a valid starting point and destination",{
+        position: "top-center"
+      });
       return;
     }
 
@@ -131,7 +172,7 @@ export default function DirectionButton({setPosition, mapRef}: {setPosition: (po
           <Button>Get Direction</Button>
         </DrawerTrigger>
 
-        <DrawerContent className="px-4 pb-[env(safe-area-inset-bottom)] flex flex-col z-1003">
+        <DrawerContent className="px-4 pb-[env(safe-area-inset-bottom)] flex flex-col h-[85dvh] max-h-[85dvh] z-1003">
           <DrawerHeader className="px-0">
             <DrawerTitle>Direction</DrawerTitle>
             <DrawerDescription>
@@ -139,7 +180,7 @@ export default function DirectionButton({setPosition, mapRef}: {setPosition: (po
             </DrawerDescription>
           </DrawerHeader>
 
-          <div className="space-y-4 mt-2 overflow-y-auto flex-1">
+          <div className="space-y-4 mt-2 overflow-y-auto max-h-[60dvh]">
             {/* FROM */}
             <div>
               <p className="text-sm font-medium">From:</p>
@@ -162,7 +203,7 @@ export default function DirectionButton({setPosition, mapRef}: {setPosition: (po
                   />
 
                   {openListDirectionFrom && (
-                    <CommandList className="max-h-40">
+                    <CommandList className="max-h-40 h-full">
                       {isLoading && <div className="p-2">Loading...</div>}
                       {isError && <div className="p-2 text-red-500">Error</div>}
 
@@ -220,7 +261,7 @@ export default function DirectionButton({setPosition, mapRef}: {setPosition: (po
                   />
 
                   {openListDirectionTo && (
-                    <CommandList className="max-h-40">
+                    <CommandList className="max-h-40 h-full">
                       {!isLoading && !isError && (
                         <>
                           <CommandEmpty>No results found.</CommandEmpty>

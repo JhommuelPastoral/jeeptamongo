@@ -133,7 +133,6 @@ export default function Dashboard() {
       mapRef.current.flyTo([currentPosition.lat, currentPosition.lng], 14);
     }
   };
-  console.log(position);
 
   if(gpsError) return <EnableLocationPermissionError />
 

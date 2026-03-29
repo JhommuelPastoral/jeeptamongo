@@ -17,6 +17,8 @@ export async function POST(req: Request) {
     const cachedRoute = await redis.get(redisKey);
     if(cachedRoute) return NextResponse.json(cachedRoute, { status: 200 });
     
+
+    // Database Hit
     const fromStop = await prisma.stop.findFirst({where: { name: { equals: fromDirection, mode: "insensitive" } },});
     const toStop = await prisma.stop.findFirst({where: { name: { equals: toDirection, mode: "insensitive" } },});
 
@@ -25,9 +27,10 @@ export async function POST(req: Request) {
     const fromRouteStops = await prisma.routeStop.findMany({where: { stopId: fromStop.id }});
     const toRouteStops = await prisma.routeStop.findMany({where: { stopId: toStop.id },});
 
-    if(!toRouteStops || !fromRouteStops) return NextResponse.json({ message: "Route not found" }, { status: 404 });
+    if(toRouteStops.length === 0 || fromRouteStops.length === 0) return NextResponse.json({ message: "Route not found" }, { status: 404 });
 
     // Direct Route Found 
+    if(fromRouteStops.length ===0 || toRouteStops.length === 0) return NextResponse.json({ message: "Route not found" }, { status: 404 });
     if (fromRouteStops[0].routeId === toRouteStops[0].routeId ) {
       const isReversed = fromRouteStops[0].order > toRouteStops[0].order;
       const maxLimit = Math.max(fromRouteStops[0].order, toRouteStops[0].order);
@@ -69,7 +72,8 @@ export async function POST(req: Request) {
       return NextResponse.json({ message: "Route found", route: finalRoute }, { status: 200 });
     }
 
-    // Transfer Route Logic Hell NAHHHHHH
+    // Transfer Jeep Logic Hell NAHH HOW TO DO THIS DAWG
+
 
 
 
@@ -77,5 +81,16 @@ export async function POST(req: Request) {
   } catch (error) {
     console.error("Error finding route", error);
     return NextResponse.json({ message: "Server error" },{ status: 500 });
+  }
+}
+
+export async function DELETE(req:Request) {
+  try {
+    const key = await redis.keys("findRoute:*");
+    await redis.del(...key);
+    return NextResponse.json({ message: "Cache cleared"}, { status: 200 });
+  } catch (error) {
+    console.error("Error clearing cache", error);
+    return NextResponse.json({ message: "Server error" }, { status: 500 });
   }
 }
