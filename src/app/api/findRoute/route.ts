@@ -48,7 +48,7 @@ export async function POST(req: Request) {
         where: {
           routeId: fromRouteStops[0].routeId,
           order: {
-            gte: minOrder,
+            gte: isReversed ? minOrder +  1 : minOrder,
             lte: maxOrder
           }
         },

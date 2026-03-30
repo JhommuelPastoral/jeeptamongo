@@ -28,12 +28,7 @@ export async function GET(req:Request) {
   try {
     const isAuthenticated = await isSessionAuth();
     if(!isAuthenticated) return NextResponse.json({message:"Not authenticated"}, {status:401});
-    const position  = await prisma.position.findMany({
-      omit:{
-        id: true,
-        stopId: true
-      }
-    });
+    const position  = await prisma.position.findMany({});
     return NextResponse.json({message:"Positions fetched successfully", position}, {status:200});
   } catch (error) {
     console.log("Error fetching positions", error);
