@@ -1,8 +1,12 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import redis from "@/lib/redis";
+import isSessionAuth from "@/helpers/isSessionAuth";
 export async function POST(req: Request) {
   try {
+    const isAuthenticated = await isSessionAuth();
+    if(!isAuthenticated) return NextResponse.json({message:"Not authenticated"}, {status:401});
+
     const { fromDirection, toDirection } = await req.json();
 
     if (!fromDirection || !toDirection) {
@@ -32,10 +36,22 @@ export async function POST(req: Request) {
     // Direct Route Found 
     if(fromRouteStops.length ===0 || toRouteStops.length === 0) return NextResponse.json({ message: "Route not found" }, { status: 404 });
     if (fromRouteStops[0].routeId === toRouteStops[0].routeId ) {
-      const isReversed = fromRouteStops[0].order > toRouteStops[0].order;
-      const maxLimit = Math.max(fromRouteStops[0].order, toRouteStops[0].order);
+      
+      const from = fromRouteStops[0].order;
+      const to = toRouteStops[0].order;
+      const minOrder = Math.min(from, to);
+      const maxOrder = Math.max(from, to);
+
+      const isReversed = from > to;
+
       const route = await prisma.routeStop.findMany({
-        where: { routeId: fromRouteStops[0].routeId },
+        where: {
+          routeId: fromRouteStops[0].routeId,
+          order: {
+            gte: minOrder,
+            lte: maxOrder
+          }
+        },
         orderBy: { order: isReversed ? "desc" : "asc" },
         include: {
           stop: {
@@ -49,10 +65,8 @@ export async function POST(req: Request) {
             }
           },
           route: true
-        },
-        take: maxLimit
-      });
-
+        }
+      })
       const reversedArray = [];
       if(isReversed){
         for(const routeStop of route){
@@ -71,12 +85,7 @@ export async function POST(req: Request) {
       await redis.set(redisKey, finalRoute);
       return NextResponse.json({ message: "Route found", route: finalRoute }, { status: 200 });
     }
-
     // Transfer Jeep Logic Hell NAHH HOW TO DO THIS DAWG
-
-
-
-
     return NextResponse.json({ message: "Route found"}, { status: 200 });
   } catch (error) {
     console.error("Error finding route", error);
@@ -86,6 +95,8 @@ export async function POST(req: Request) {
 
 export async function DELETE(req:Request) {
   try {
+    const isAuthenticated = await isSessionAuth();
+    if(!isAuthenticated) return NextResponse.json({message:"Not authenticated"}, {status:401});
     const key = await redis.keys("findRoute:*");
     await redis.del(...key);
     return NextResponse.json({ message: "Cache cleared"}, { status: 200 });

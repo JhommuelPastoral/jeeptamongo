@@ -32,6 +32,8 @@ model Stop{
   name String
   position Position[]
   routes RouteStop[]
+
+  @@index([name])
 }
 
 model Position{
@@ -49,4 +51,7 @@ model RouteStop {
   order     Int     
   route     JeepRoute @relation(fields: [routeId], references: [id])
   stop      Stop      @relation(fields: [stopId], references: [id])
+
+  @@index(fields: [routeId, order])
+  @@index(fields: [stopId])
 }

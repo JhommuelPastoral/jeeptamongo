@@ -1,8 +1,12 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import isSessionAuth from "@/helpers/isSessionAuth";
 
 export async function POST(req:Request){
   try {
+    const isAuthenticated = await isSessionAuth();
+    if(!isAuthenticated) return NextResponse.json({message:"Not authenticated"}, {status:401});
+
     const {positions, stopId} = await req.json();
     for(const pos of positions){
       await prisma.position.create({
@@ -22,6 +26,8 @@ export async function POST(req:Request){
 
 export async function GET(req:Request) {
   try {
+    const isAuthenticated = await isSessionAuth();
+    if(!isAuthenticated) return NextResponse.json({message:"Not authenticated"}, {status:401});
     const position  = await prisma.position.findMany({
       omit:{
         id: true,

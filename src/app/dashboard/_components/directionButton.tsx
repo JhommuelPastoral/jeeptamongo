@@ -106,7 +106,13 @@ export default function DirectionButton({setPosition, mapRef}: DirectButtonFunct
       })
       .flat();
     // Check if filtered is empty
-    if (filtered?.length === 0) return;
+    if (filtered?.length === 0) {
+      toast.error("Route not found", {
+        position: "top-center",
+      });
+      return;
+    };
+
     mapRef.current?.flyTo(filtered[0], 18);
     setPosition(filtered);
     setOpenDrawer(false);
@@ -162,7 +168,8 @@ export default function DirectionButton({setPosition, mapRef}: DirectButtonFunct
           position: "top-center"
         }),
       },
-    );
+    );    
+         
   };
 
   return (

@@ -1,9 +1,13 @@
 import prisma from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import redis from "@/lib/redis";
+import isSessionAuth from "@/helpers/isSessionAuth";
+
 
 export async function POST(req: Request) {
   try {
+    const isAuthenticated = await isSessionAuth();
+    if(!isAuthenticated) return NextResponse.json({message:"Not authenticated"}, {status:401});
     const {routeStop} = await req.json();
     if(!routeStop) return NextResponse.json({message:"No data provided"}, {status:400});
     const routeStops = await prisma.routeStop.createMany({data:routeStop});
@@ -16,6 +20,9 @@ export async function POST(req: Request) {
 
 export async function GET(req: Request) {
   try {
+    const isAuthenticated = await isSessionAuth();
+    if(!isAuthenticated) return NextResponse.json({message:"Not authenticated"}, {status:401});
+
     const routeStops = await prisma.routeStop.findMany({
       include:{
         stop:{
