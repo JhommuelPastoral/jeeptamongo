@@ -28,6 +28,7 @@ import {
   HoverCardContent,
   HoverCardTrigger,
 } from "@/components/ui/hover-card";
+import { toast } from "sonner";
 
 type Location = {
   lat: number;
@@ -46,7 +47,7 @@ export default function Dashboard() {
   const mapRef = useRef<LeaftletMap | null>(null);
   const [gpsError, setGpsError] = useState(false);
   const [position, setPosition] = useState<Position[]>([]);
-
+  const isArrived = useRef<boolean>(false);
   // Get current position
   useEffect(() => {
       const watchId = navigator.geolocation.watchPosition(
@@ -148,15 +149,22 @@ export default function Dashboard() {
     return closestIndex;
   };
 
-  const visibleRoute = useMemo(() => {
+  const visiblePolyline = useMemo(() => {
     if (!position.length) return [];
-
     const index = findClosestIndex(position, currentPosition);
-
     return index > 0 ? position.slice(index) : position;
-
   }, [position, currentPosition]);
 
+  useEffect(() => { 
+    isArrived.current = false;
+  }, [position]);
+  
+  useEffect(() => {
+    if(visiblePolyline.length < 2 && visiblePolyline.length > 0 && !isArrived.current){
+      isArrived.current = true;
+      toast.success("Arrived at destination", { position: "top-center" });
+    }
+  }, [visiblePolyline]); 
 
   // Set View
   const handleSetView = () => {
@@ -199,11 +207,13 @@ export default function Dashboard() {
             className="animate-pulse"
           />        
           {position.length > 0 && (
-            <Polyline 
-              positions={visibleRoute}
-              color={theme === "dark" ? "white" : "black"}
-              weight={3}
-            />
+            <>
+              <Polyline 
+                positions={visiblePolyline}
+                color={theme === "dark" ? "white" : "black"}
+                weight={3}
+              />
+            </>
           )}
         </MapContainer>   
       </Suspense>
