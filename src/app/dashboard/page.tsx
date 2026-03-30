@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { Suspense, useEffect, useState, useRef } from "react";
+import { Suspense, useEffect, useState, useRef, use, useMemo } from "react";
 import Loading from "../loading";
 import harversineFormula from "@/helpers/harversineFormula";
 import type { Map as LeaftletMap } from "leaflet";
@@ -147,18 +147,16 @@ export default function Dashboard() {
 
     return closestIndex;
   };
-  
-  useEffect(() => {
-    if (position.length === 0) return;
 
-    const closestIndex = findClosestIndex(position, currentPosition);
+  const visibleRoute = useMemo(() => {
+    if (!position.length) return [];
 
-    // OPTIONAL: threshold (avoid jitter)
-    if (closestIndex > 0) {
-      setPosition((prev) => prev.slice(closestIndex));
-    }
+    const index = findClosestIndex(position, currentPosition);
 
-  }, [currentPosition]);
+    return index > 0 ? position.slice(index) : position;
+
+  }, [position, currentPosition]);
+
 
   // Set View
   const handleSetView = () => {
@@ -202,7 +200,7 @@ export default function Dashboard() {
           />        
           {position.length > 0 && (
             <Polyline 
-              positions={position}
+              positions={visibleRoute}
               color={theme === "dark" ? "white" : "black"}
               weight={3}
             />
