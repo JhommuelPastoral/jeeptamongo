@@ -127,6 +127,39 @@ export default function Dashboard() {
     }
   };
 
+  const findClosestIndex = (polyline: Position[], current: Location) => {
+    let minDistance = Infinity;
+    let closestIndex = 0;
+
+    polyline.forEach(([lat, lng], index) => {
+      const dist = harversineFormula(
+        current.lat,
+        current.lng,
+        lat,
+        lng
+      );
+
+      if (dist < minDistance) {
+        minDistance = dist;
+        closestIndex = index;
+      }
+    });
+
+    return closestIndex;
+  };
+  
+  useEffect(() => {
+    if (position.length === 0) return;
+
+    const closestIndex = findClosestIndex(position, currentPosition);
+
+    // OPTIONAL: threshold (avoid jitter)
+    if (closestIndex > 0) {
+      setPosition((prev) => prev.slice(closestIndex));
+    }
+
+  }, [currentPosition]);
+
   // Set View
   const handleSetView = () => {
     if(mapRef.current){
