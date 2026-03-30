@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import EnableLocationPermissionError from "./_components/enableLocationPermissionError";
 import DirectionButton from "./_components/directionButton";
+import EmailButton from "./_components/emailButton";
 import {
   HoverCard,
   HoverCardContent,
@@ -165,7 +166,6 @@ export default function Dashboard() {
       toast.success("Arrived at destination", { position: "top-center" });
     }
   }, [visiblePolyline]); 
-
   // Set View
   const handleSetView = () => {
     if(mapRef.current){
@@ -178,7 +178,7 @@ export default function Dashboard() {
   if (currentPosition.lat === 0 && currentPosition.lng === 0) {
     return <Loading title="map"/>;
   }
-  if(!session) return <Loading title="session" />
+  if(!session?.user) return <Loading title="session" />
   return (
     <div className="w-screen h-dvh relative">
       {/* Map */}
@@ -245,7 +245,7 @@ export default function Dashboard() {
                 <HoverCard openDelay={10} closeDelay={100}>
                   <HoverCardTrigger asChild>
                     <Avatar >
-                      <AvatarImage src={session?.user?.image ?? ""} alt="User Profile" />
+                      <AvatarImage src={session?.user?.image || ""} alt="User Profile" />
                       <AvatarFallback className="bg-amber-400 text-black">{session?.user?.name?.charAt(0) || ""}</AvatarFallback>
                     </Avatar>
                   </HoverCardTrigger>
@@ -279,6 +279,7 @@ export default function Dashboard() {
         <div className="flex flex-col items-start gap-2 p-4">
           <Button onClick={handleSetView} className="cursor-pointer w-full">Am I Lost?</Button>
           <DirectionButton setPosition={setPosition} mapRef={mapRef}/>
+          <EmailButton email={session?.user?.email || ""}/>
         </div>
       </div>
       

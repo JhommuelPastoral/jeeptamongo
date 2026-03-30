@@ -55,3 +55,9 @@ model RouteStop {
   @@index(fields: [routeId, order])
   @@index(fields: [stopId])
 }
+model EmailLog {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+  email String 
+  createdAt DateTime @default(now())
+  expireAt DateTime
+}

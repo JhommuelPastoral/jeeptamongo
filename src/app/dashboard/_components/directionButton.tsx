@@ -308,7 +308,13 @@ export default function DirectionButton({setPosition, mapRef}: DirectButtonFunct
               onClick={handleSubmit}
               disabled={!directionFrom || !directionTo || findRouteLoading}
             >
-              {findRouteLoading ? "Finding Route..." : "Find Route"}
+              {findRouteLoading ? (
+                <div className="flex items-center gap-2">
+                  <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
+                  Finding Route... 
+                </div>
+
+              ) : "Find Route"} 
             </Button>
 
             <DrawerClose asChild>
