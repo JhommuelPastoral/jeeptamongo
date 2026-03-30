@@ -19,7 +19,7 @@ export async function POST(req: Request) {
     // Check if route is cached
     const redisKey = `findRoute:${fromDirection}-${toDirection}`;
     const cachedRoute = await redis.get(redisKey);
-    if(cachedRoute) return NextResponse.json(cachedRoute, { status: 200 });
+    if(cachedRoute) return NextResponse.json({message:"Route found", route: cachedRoute}, { status: 200 });
     
 
     // Database Hit

@@ -112,7 +112,7 @@ export default function DirectionButton({setPosition, mapRef}: DirectButtonFunct
       });
       return;
     };
-
+    console.log(rawPosition);
     mapRef.current?.flyTo(filtered[0], 18);
     setPosition(filtered);
     setOpenDrawer(false);
