@@ -166,8 +166,13 @@ export default function Dashboard() {
     if(visiblePolyline.length < 2 && visiblePolyline.length > 0 && !isArrived.current){
       isArrived.current = true;
       toast.success("Arrived at destination", { position: "top-center" });
+      if ("vibrate" in navigator) {
+        navigator.vibrate([200, 100, 200, 100, 400]);
+      }
+
     }
   }, [visiblePolyline]); 
+
   // Set View
   const handleSetView = () => {
     if(mapRef.current){
@@ -211,7 +216,7 @@ export default function Dashboard() {
           {position.length > 0 && (
             <>
               <Polyline 
-                positions={visiblePolyline}
+                positions={position}
                 color={theme === "dark" ? "white" : "black"}
                 weight={3}
               />

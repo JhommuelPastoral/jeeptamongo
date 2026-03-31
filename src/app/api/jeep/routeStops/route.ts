@@ -22,7 +22,6 @@ export async function GET(req: Request) {
   try {
     const isAuthenticated = await isSessionAuth();
     if(!isAuthenticated) return NextResponse.json({message:"Not authenticated"}, {status:401});
-
     const routeStops = await prisma.routeStop.findMany({
       include:{
         stop:{
@@ -39,6 +38,9 @@ export async function GET(req: Request) {
           }
         },
         route: true
+      },
+      orderBy: {
+        order: "asc"
       }
     });
     return NextResponse.json({message:"Stops fetched successfully", routeStops}, {status:200});
@@ -47,3 +49,19 @@ export async function GET(req: Request) {
     return NextResponse.json({message:"Error fetching stops"}, {status:500});
   }
 }
+
+// export async function DELETE(req:Request) {
+//   try {
+//     const deletedRouteStops = await prisma.routeStop.deleteMany({
+//       where:{
+//         order: {
+//           gt: 28
+//         }
+//       }
+//     });
+//     return NextResponse.json({message:"Stops deleted successfully", deletedRouteStops}, {status:200});
+//   } catch (error) {
+//     console.log("Error deleting stops", error);
+//     return NextResponse.json({message:"Error deleting stops"}, {status:500});
+//   }
+// }
