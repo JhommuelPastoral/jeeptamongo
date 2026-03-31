@@ -1,7 +1,9 @@
-import nodemailer from "nodemailer";
+import { Resend } from "resend";
 import isSessionAuth from "@/helpers/isSessionAuth";
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 export const runtime = "nodejs";
 
@@ -16,7 +18,14 @@ export async function POST(req: Request) {
     }
 
     const { email, subject, message } = await req.json();
-    if(!email || !subject || !message) return NextResponse.json({message:"No data provided"}, {status:400});
+
+    if (!email || !subject || !message) {
+      return NextResponse.json(
+        { message: "No data provided" },
+        { status: 400 }
+      );
+    }
+
     const count = await prisma.emailLog.count({
       where: { email },
     });
@@ -27,20 +36,9 @@ export async function POST(req: Request) {
         { status: 429 }
       );
     }
-
-    const transporter = nodemailer.createTransport({
-      host: "smtp.gmail.com",
-      port: 465,
-      secure: true, // true for 465
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
-      },
-    });
-    
-    const info = await transporter.sendMail({
-      from: `"MongoJeep" <${process.env.EMAIL_USER}>`,
-      to: process.env.EMAIL_USER,
+    await resend.emails.send({
+      from: "MongoJeep <onboarding@resend.dev>", 
+      to: process.env.EMAIL_USER!,
       subject,
       replyTo: email,
       html: `
@@ -73,13 +71,14 @@ export async function POST(req: Request) {
     await prisma.emailLog.create({
       data: {
         email,
-        expireAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 1 day
+        expireAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
       },
     });
 
-    return NextResponse.json({ success: true, message: "Email sent successfully" }, { status: 200 });
-    
-
+    return NextResponse.json(
+      { success: true, message: "Email sent successfully" },
+      { status: 200 }
+    );
   } catch (error) {
     console.error("EMAIL ERROR:", error);
     return NextResponse.json(
