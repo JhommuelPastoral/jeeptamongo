@@ -156,10 +156,12 @@ export default function Dashboard() {
     return index > 0 ? position.slice(index) : position;
   }, [position, currentPosition]);
 
+  // Set isArrived when position changes
   useEffect(() => { 
     isArrived.current = false;
   }, [position]);
   
+  // Show Toast when Arrived and set isArrived
   useEffect(() => {
     if(visiblePolyline.length < 2 && visiblePolyline.length > 0 && !isArrived.current){
       isArrived.current = true;
@@ -209,7 +211,7 @@ export default function Dashboard() {
           {position.length > 0 && (
             <>
               <Polyline 
-                positions={visiblePolyline}
+                positions={position}
                 color={theme === "dark" ? "white" : "black"}
                 weight={3}
               />

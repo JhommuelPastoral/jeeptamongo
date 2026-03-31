@@ -28,17 +28,17 @@ export async function POST(req: Request) {
 
     if (!fromStop || !toStop) return NextResponse.json({ message: "Stop not found" },{ status: 404 });
     
-    const fromRouteStops = await prisma.routeStop.findMany({where: { stopId: fromStop.id }});
-    const toRouteStops = await prisma.routeStop.findMany({where: { stopId: toStop.id },});
+    const fromRouteStops = await prisma.routeStop.findFirst({where: { stopId: fromStop.id }});
+    const toRouteStops = await prisma.routeStop.findFirst({where: { stopId: toStop.id },});
 
-    if(toRouteStops.length === 0 || fromRouteStops.length === 0) return NextResponse.json({ message: "Route not found" }, { status: 404 });
+    if(!fromRouteStops || !toRouteStops) return NextResponse.json({ message: "Route not found" }, { status: 404 });
 
     // Direct Route Found 
-    if(fromRouteStops.length ===0 || toRouteStops.length === 0) return NextResponse.json({ message: "Route not found" }, { status: 404 });
-    if (fromRouteStops[0].routeId === toRouteStops[0].routeId ) {
+    if(!fromRouteStops || !toRouteStops) return NextResponse.json({ message: "Route not found" }, { status: 404 });
+    if (fromRouteStops.routeId === toRouteStops.routeId ) {
       
-      const from = fromRouteStops[0].order;
-      const to = toRouteStops[0].order;
+      const from = fromRouteStops.order;
+      const to = toRouteStops.order;
       const minOrder = Math.min(from, to);
       const maxOrder = Math.max(from, to);
 
@@ -46,7 +46,7 @@ export async function POST(req: Request) {
 
       const route = await prisma.routeStop.findMany({
         where: {
-          routeId: fromRouteStops[0].routeId,
+          routeId: fromRouteStops.routeId,
           order: {
             gte: isReversed ? minOrder +  1 : minOrder,
             lte: maxOrder
@@ -66,22 +66,51 @@ export async function POST(req: Request) {
           },
           route: true
         }
-      })
-      const reversedArray = [];
-      if(isReversed){
-        for(const routeStop of route){
-          const temp = {
-            ...routeStop,
-            stop: {
-              ...routeStop.stop,
-              position: [...routeStop.stop.position].reverse()
-            }
-          }
-          reversedArray.push(temp);
-        }
-      };
+      });
+      const finalRoute = route.map(routeStop => {
+        const positions = routeStop.stop.position;
 
-      const finalRoute = isReversed ? reversedArray : route;
+        let selectedPositions;
+
+        if (isReversed) {
+          const reversePositions = positions.filter(p => p.direction === "Reverse");
+
+          if (reversePositions.length > 0) {
+            selectedPositions = [...reversePositions].reverse();
+          } else {
+            // fallback to forward but reversed order
+            const forwardPositions = positions.filter(p => p.direction === "Forward");
+            selectedPositions = [...forwardPositions].reverse();
+          }
+        } else {
+          selectedPositions = positions.filter(p => p.direction === "Forward");
+        }
+
+        return {
+          ...routeStop,
+          stop: {
+            ...routeStop.stop,
+            position: selectedPositions
+          }
+        };
+      });
+
+      // const reversedArray = [];
+      // if(isReversed){
+      //   const getRevesed
+      //   for(const routeStop of route){
+      //     const temp = {
+      //       ...routeStop,
+      //       stop: {
+      //         ...routeStop.stop,
+      //         position: [...routeStop.stop.position].reverse()
+      //       }
+      //     }
+      //     reversedArray.push(temp);
+      //   }
+      // };
+
+      // const finalRoute = isReversed ? reversedArray : route;
       await redis.set(redisKey, finalRoute);
       return NextResponse.json({ message: "Route found", route: finalRoute }, { status: 200 });
     }
