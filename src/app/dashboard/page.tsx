@@ -211,7 +211,7 @@ export default function Dashboard() {
           {position.length > 0 && (
             <>
               <Polyline 
-                positions={position}
+                positions={visiblePolyline}
                 color={theme === "dark" ? "white" : "black"}
                 weight={3}
               />
