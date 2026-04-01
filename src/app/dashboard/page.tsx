@@ -24,6 +24,8 @@ import {
 import EnableLocationPermissionError from "./_components/enableLocationPermissionError";
 import DirectionButton from "./_components/directionButton";
 import EmailButton from "./_components/emailButton";
+import ViewJeepStopsButton from "./_components/viewJeepStops";
+
 import {
   HoverCard,
   HoverCardContent,
@@ -216,7 +218,7 @@ export default function Dashboard() {
           {position.length > 0 && (
             <>
               <Polyline 
-                positions={visiblePolyline}
+                positions={position}
                 color={theme === "dark" ? "white" : "black"}
                 weight={3}
               />
@@ -287,6 +289,7 @@ export default function Dashboard() {
           <Button onClick={handleSetView} className="cursor-pointer w-full">Am I Lost?</Button>
           <DirectionButton setPosition={setPosition} mapRef={mapRef}/>
           <EmailButton email={session?.user?.email || ""}/>
+          <ViewJeepStopsButton/>
         </div>
       </div>
       

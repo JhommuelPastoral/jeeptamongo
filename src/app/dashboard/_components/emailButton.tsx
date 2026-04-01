@@ -57,68 +57,71 @@ export default function EmailButton({ email }: EmailButtonProps) {
   };
   
   return (
-    <Drawer open={openDrawer} onOpenChange={setOpenDrawer} repositionInputs={false}>
-      <DrawerTrigger asChild>
-        <Button>Send Feedback</Button>
-      </DrawerTrigger>
-      <DrawerContent>
-        <DrawerHeader>
-          <DrawerTitle>We Value Your Feedback</DrawerTitle>
-          <DrawerDescription>
-            Have suggestions, feedback, or encountered an issue? Let us know — your input helps us improve the experience.
-          </DrawerDescription>
-        </DrawerHeader>
+    <div className="w-full">
+      <Drawer open={openDrawer} onOpenChange={setOpenDrawer} repositionInputs={false} >
+        <DrawerTrigger asChild>
+          <Button className="w-full">Send Feedback</Button>
+        </DrawerTrigger>
+        <DrawerContent>
+          <DrawerHeader>
+            <DrawerTitle>We Value Your Feedback</DrawerTitle>
+            <DrawerDescription>
+              Have suggestions, feedback, or encountered an issue? Let us know — your input helps us improve the experience.
+            </DrawerDescription>
+          </DrawerHeader>
 
-        {/* Form */}
-        <form onSubmit={(e) => handleSubmitEmail(e)}>
-          <FieldSet className="w-full px-5 space-y-4">
-            <FieldGroup>
-              {/* Subject */}
-              <Field>
-                <FieldLabel htmlFor="subject">Subject</FieldLabel>
-                <Input
-                  id="subject"
-                  placeholder="Provide a short title for your message."
-                  value={subject}
-                  onChange={(e) => setSubject(e.target.value)}
-                />
+          {/* Form */}
+          <form onSubmit={(e) => handleSubmitEmail(e)}>
+            <FieldSet className="w-full px-5 space-y-4">
+              <FieldGroup>
+                {/* Subject */}
+                <Field>
+                  <FieldLabel htmlFor="subject">Subject</FieldLabel>
+                  <Input
+                    id="subject"
+                    placeholder="Provide a short title for your message."
+                    value={subject}
+                    onChange={(e) => setSubject(e.target.value)}
+                  />
 
-              </Field>
+                </Field>
 
-              {/* Feedback */}
-              <Field>
-                <FieldLabel htmlFor="feedback">Feedback</FieldLabel>
-                <Textarea
-                  id="feedback"
-                  placeholder="Describe your experience, suggestion, or issue..."
-                  rows={4}
-                  className="w-full max-h-40 resize-none"
-                  value={message}
-                  onChange={(e) => setMessage(e.target.value)}
-                />
-                <FieldDescription>
-                  Please include as much detail as possible to help us understand your feedback.
-                </FieldDescription>
-              </Field>
-            </FieldGroup>
-          </FieldSet>
-          <DrawerFooter>
-            <Button type="submit" disabled={sendEmailLoading || !subject || !message}>
-              {sendEmailLoading ? (
-                <div className="flex items-center gap-2">
-                  <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
-                  Sending Feedback... 
-                </div>
+                {/* Feedback */}
+                <Field>
+                  <FieldLabel htmlFor="feedback">Feedback</FieldLabel>
+                  <Textarea
+                    id="feedback"
+                    placeholder="Describe your experience, suggestion, or issue..."
+                    rows={4}
+                    className="w-full max-h-40 resize-none"
+                    value={message}
+                    onChange={(e) => setMessage(e.target.value)}
+                  />
+                  <FieldDescription>
+                    Please include as much detail as possible to help us understand your feedback.
+                  </FieldDescription>
+                </Field>
+              </FieldGroup>
+            </FieldSet>
+            <DrawerFooter>
+              <Button type="submit" disabled={sendEmailLoading || !subject || !message}>
+                {sendEmailLoading ? (
+                  <div className="flex items-center gap-2">
+                    <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
+                    Sending Feedback... 
+                  </div>
 
-              ) : "Send Feedback"} 
-            </Button>
-            <DrawerClose asChild>
-              <Button variant="outline">Cancel</Button>
-            </DrawerClose>
-          </DrawerFooter>
-        </form>
+                ) : "Send Feedback"} 
+              </Button>
+              <DrawerClose asChild>
+                <Button variant="outline">Cancel</Button>
+              </DrawerClose>
+            </DrawerFooter>
+          </form>
 
-      </DrawerContent>
-    </Drawer>
+        </DrawerContent>
+      </Drawer>
+
+    </div>
   );
 }

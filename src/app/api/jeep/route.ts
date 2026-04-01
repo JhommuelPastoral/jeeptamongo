@@ -20,12 +20,40 @@ export async function POST(req:Request) {
   }
 }
 
-export async function GET(req:Request){
+export async function GET(req: Request) {
   try {
-    const jeeps = await prisma.jeepRoute.findMany();
-    return NextResponse.json({message:"Jeeps fetched successfully", jeeps}, {status:200});
+    const isAuthenticated = await isSessionAuth();
+    if (!isAuthenticated)
+      return NextResponse.json({ message: "Not authenticated" }, { status: 401 });
+
+    const jeeps = await prisma.jeepRoute.findMany({
+      include: {
+        stops: {
+          where: {
+            stop: {
+              name: {
+                not: "Connector", 
+              },
+            },
+          },
+          select: {
+            stop: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    return NextResponse.json(
+      { message: "Jeeps fetched successfully", jeeps },
+      { status: 200 }
+    );
   } catch (error) {
     console.log("Error fetching jeeps", error);
-    return NextResponse.json({message:"Error fetching jeeps"}, {status:500});
+    return NextResponse.json({ message: "Error fetching jeeps" }, { status: 500 });
   }
 }

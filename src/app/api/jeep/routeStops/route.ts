@@ -11,7 +11,7 @@ export async function POST(req: Request) {
     const {routeStop} = await req.json();
     if(!routeStop) return NextResponse.json({message:"No data provided"}, {status:400});
     const routeStops = await prisma.routeStop.createMany({data:routeStop});
-    return NextResponse.json({message:"Stop created successfully"}, {status:200});
+    return NextResponse.json({message:"Route stop created successfully"}, {status:200});
   } catch (error) {
     console.log("Error creating stop", error);
     return NextResponse.json({message:"Error creating stop"}, {status:500});
@@ -43,20 +43,45 @@ export async function GET(req: Request) {
         order: "asc"
       }
     });
-    return NextResponse.json({message:"Stops fetched successfully", routeStops}, {status:200});
+    return NextResponse.json({message:"Route stops fetched successfully", routeStops}, {status:200});
   } catch (error) {
     console.log("Error fetching stops", error);
     return NextResponse.json({message:"Error fetching stops"}, {status:500});
   }
 }
 
+
+// export async function PATCH(req:Request) {
+//   try {
+//     const isAuthenticated = await isSessionAuth();
+//     if(!isAuthenticated) return NextResponse.json({message:"Not authenticated"}, {status:401});
+
+//     const routeStops = await prisma.routeStop.updateMany({
+//       where: {
+//         order: {
+//           gt: 49
+//         }
+//       },
+//       data: {
+//         canReverse: false
+//       }
+//     });
+
+//     return NextResponse.json({message:"Route stops patched successfully"}, {status:200});
+
+//   } catch (error) {
+//     console.log("Error patching stops", error);
+//     return NextResponse.json({message:"Error patching stops"}, {status:500});    
+//   }
+// }
+
+
+
 // export async function DELETE(req:Request) {
 //   try {
 //     const deletedRouteStops = await prisma.routeStop.deleteMany({
 //       where:{
-//         order: {
-//           gt: 28
-//         }
+//         order: 94
 //       }
 //     });
 //     return NextResponse.json({message:"Stops deleted successfully", deletedRouteStops}, {status:200});

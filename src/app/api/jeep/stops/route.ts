@@ -19,7 +19,10 @@ export async function GET(req: Request) {
   try {
     const isAuthenticated = await isSessionAuth();
     if(!isAuthenticated) return NextResponse.json({message:"Not authenticated"}, {status:401});
-    const stops = await prisma.stop.findMany();
+    // const stops = await prisma.stop.findMany({
+    //   take: 49,
+    // });
+    const stops = await prisma.stop.findMany({});
     return NextResponse.json({message:"Stops fetched successfully", stops}, {status:200});
   } catch (error) {
     console.log("Error fetching stops", error);

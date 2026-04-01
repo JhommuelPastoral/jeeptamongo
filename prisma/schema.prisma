@@ -52,9 +52,12 @@ model RouteStop {
   order     Int     
   route     JeepRoute @relation(fields: [routeId], references: [id])
   stop      Stop      @relation(fields: [stopId], references: [id])
+  canReverse Boolean 
 
   @@index(fields: [routeId, order])
   @@index(fields: [stopId])
+  @@index(fields: [routeId, canReverse, order])
+
 }
 model EmailLog {
   id String @id @default(auto()) @map("_id") @db.ObjectId
@@ -62,3 +65,4 @@ model EmailLog {
   createdAt DateTime @default(now())
   expireAt DateTime
 }
+

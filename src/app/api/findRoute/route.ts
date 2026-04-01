@@ -2,6 +2,59 @@ import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import redis from "@/lib/redis";
 import isSessionAuth from "@/helpers/isSessionAuth";
+
+type Position = { lat: number; lng: number; direction: string };
+type RouteStop = {
+  id: string;
+  routeId: string;
+  stopId: string;
+  order: number;
+  canReverse: boolean;
+  stop: {
+    id: string;
+    name: string;
+    position: Position[];
+  }
+  route: {
+    id: string;
+    name: string;
+  }
+};
+
+// Helper Function: normalizes positions depending on direction
+function getNormalizedRoutes(routeStop: RouteStop[], isReversed: boolean) {
+  const routes = routeStop.map((routeStop: RouteStop) => {
+    const positions = routeStop.stop.position;
+
+    let selectedPositions;
+    if (isReversed) {
+      // When reversed, try to use "Reverse" positions first
+      const reversePositions = positions.filter(p => p.direction === "Reverse");
+
+      if (reversePositions.length > 0) {
+        selectedPositions = [...reversePositions].reverse();
+      } else {
+        // fallback to forward but reversed order
+        const forwardPositions = positions.filter(p => p.direction === "Forward");
+        selectedPositions = [...forwardPositions].reverse();
+      }
+    } else {
+      selectedPositions = positions.filter(p => p.direction === "Forward");
+    }
+
+    return {
+      ...routeStop,
+      stop: {
+        ...routeStop.stop,
+        position: selectedPositions
+      }
+    };
+  });
+
+  return routes;
+}
+
+
 export async function POST(req: Request) {
   try {
     const isAuthenticated = await isSessionAuth();
@@ -9,6 +62,7 @@ export async function POST(req: Request) {
 
     const { fromDirection, toDirection } = await req.json();
 
+    // Validate Input
     if (!fromDirection || !toDirection) {
       return NextResponse.json(
         { message: "Missing input" },
@@ -16,103 +70,127 @@ export async function POST(req: Request) {
       );
     }
 
-    // Check if route is cached
+    // Check if route is in the cached
     const redisKey = `findRoute:${fromDirection}-${toDirection}`;
     const cachedRoute = await redis.get(redisKey);
     if(cachedRoute) return NextResponse.json({message:"Route found", route: cachedRoute}, { status: 200 });
     
 
-    // Database Hit
+    // Database Hit 
+    // Check if stop is in the database
     const fromStop = await prisma.stop.findFirst({where: { name: { equals: fromDirection, mode: "insensitive" } },});
     const toStop = await prisma.stop.findFirst({where: { name: { equals: toDirection, mode: "insensitive" } },});
 
+    // Validate Stop 
     if (!fromStop || !toStop) return NextResponse.json({ message: "Stop not found" },{ status: 404 });
     
     const fromRouteStops = await prisma.routeStop.findFirst({where: { stopId: fromStop.id }});
     const toRouteStops = await prisma.routeStop.findFirst({where: { stopId: toStop.id },});
 
     if(!fromRouteStops || !toRouteStops) return NextResponse.json({ message: "Route not found" }, { status: 404 });
-
     // Direct Route Found 
-    if(!fromRouteStops || !toRouteStops) return NextResponse.json({ message: "Route not found" }, { status: 404 });
     if (fromRouteStops.routeId === toRouteStops.routeId ) {
-      
       const from = fromRouteStops.order;
       const to = toRouteStops.order;
       const minOrder = Math.min(from, to);
       const maxOrder = Math.max(from, to);
-
+      const canReverseFrom = fromRouteStops.canReverse;
       const isReversed = from > to;
 
-      const route = await prisma.routeStop.findMany({
-        where: {
-          routeId: fromRouteStops.routeId,
-          order: {
-            gte: isReversed ? minOrder +  1 : minOrder,
-            lte: maxOrder
-          }
-        },
-        orderBy: { order: isReversed ? "desc" : "asc" },
-        include: {
-          stop: {
-            include: {
-              position: {
-                omit: {
-                  id: true,
-                  stopId: true
-                }
-              }
+      // This Case is when, we are going back to the start of the route, when the route is cannot be reversed or no bidirectional route
+      // First is to get all the routes that can be reversed, must be greater than minOrder, sorted by order desc
+      // Second is to get all the routes that cannot be reversed, must be greater than or equal to maxOrder, sorted by order asc
+      // Combined them and get the final route
+
+      if(!canReverseFrom && isReversed) {
+        const allCanReverseRoute = await prisma.routeStop.findMany({
+          where:{
+            routeId: fromRouteStops.routeId,
+            canReverse: true,
+            order:{
+              gt: minOrder
             }
           },
-          route: true
-        }
-      });
-      const finalRoute = route.map(routeStop => {
-        const positions = routeStop.stop.position;
-
-        let selectedPositions;
-
-        if (isReversed) {
-          const reversePositions = positions.filter(p => p.direction === "Reverse");
-
-          if (reversePositions.length > 0) {
-            selectedPositions = [...reversePositions].reverse();
-          } else {
-            // fallback to forward but reversed order
-            const forwardPositions = positions.filter(p => p.direction === "Forward");
-            selectedPositions = [...forwardPositions].reverse();
+          orderBy: {
+            order: "desc"
+          },
+          include: {
+            stop: {
+              include: {
+                position: {
+                  omit: {
+                    id: true,
+                    stopId: true
+                  }
+                }
+              }
+            },
+            route: true
           }
-        } else {
-          selectedPositions = positions.filter(p => p.direction === "Forward");
-        }
-
-        return {
-          ...routeStop,
-          stop: {
-            ...routeStop.stop,
-            position: selectedPositions
+        });
+        const allCantReverseRoute = await prisma.routeStop.findMany({
+          where:{
+            routeId: fromRouteStops.routeId,
+            canReverse: false,
+            order:{
+              gte: maxOrder
+            }
+          },
+          orderBy: {
+            order: "asc"
+          },
+          include: {
+            stop: {
+              include: {
+                position: {
+                  omit: {
+                    id: true,
+                    stopId: true
+                  }
+                }
+              }
+            },
+            route: true
           }
-        };
-      });
+        });
+        const allRoutes = [...allCantReverseRoute, ...allCanReverseRoute];
+        const finalRoute = getNormalizedRoutes(allRoutes, isReversed);
+        if(finalRoute.length === 0) return NextResponse.json({ message: "Route not found" }, { status: 404 });
+        await redis.set(redisKey, finalRoute);
+        return NextResponse.json({ message: "Route found", route: finalRoute }, { status: 200 });
+      }
+      
+      // This Case is when the route has bidirectional route and can be reversed
+      else{
+        const route = await prisma.routeStop.findMany({
+          where: {
+            routeId: fromRouteStops.routeId,
+            order: {
+              gte: isReversed ? minOrder +  1 : minOrder,
+              lte: maxOrder
+            }
+          },
+          orderBy: { order: isReversed ? "desc" : "asc" },
+          include: {
+            stop: {
+              include: {
+                position: {
+                  omit: {
+                    id: true,
+                    stopId: true
+                  }
+                }
+              }
+            },
+            route: true
+          }
+        });
+        const finalRoute = getNormalizedRoutes(route, isReversed);
+        if(finalRoute.length === 0) return NextResponse.json({ message: "Route not found" }, { status: 404 });
+        await redis.set(redisKey, finalRoute);
+        return NextResponse.json({ message: "Route found", route: finalRoute }, { status: 200 });
+      }
 
-      // const reversedArray = [];
-      // if(isReversed){
-      //   const getRevesed
-      //   for(const routeStop of route){
-      //     const temp = {
-      //       ...routeStop,
-      //       stop: {
-      //         ...routeStop.stop,
-      //         position: [...routeStop.stop.position].reverse()
-      //       }
-      //     }
-      //     reversedArray.push(temp);
-      //   }
-      // };
-
-      // const finalRoute = isReversed ? reversedArray : route;
-      await redis.set(redisKey, finalRoute);
-      return NextResponse.json({ message: "Route found", route: finalRoute }, { status: 200 });
     }
     // Transfer Jeep Logic Hell NAHH HOW TO DO THIS DAWG
     return NextResponse.json({ message: "Route found"}, { status: 200 });

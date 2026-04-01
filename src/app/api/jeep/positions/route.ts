@@ -64,19 +64,19 @@ export async function PATCH(req:Request) {
   }
 }
 
-// export async function DELETE(req:Request) {
-//   try {
-//     const isAuthenticated = await isSessionAuth();
-//     if(!isAuthenticated) return NextResponse.json({message:"Not authenticated"}, {status:401});
-//     const {id} = await req.json();
-//     await prisma.position.delete({
-//       where: {
-//         id
-//       }
-//     });
-//     return NextResponse.json({message:"Position deleted successfully"}, {status:200});
-//   } catch (error) {
-//     console.log("Error deleting position", error);
-//     return NextResponse.json({message:"Error deleting position"}, {status:500});
-//   }
-// }
+export async function DELETE(req:Request) {
+  try {
+    const isAuthenticated = await isSessionAuth();
+    if(!isAuthenticated) return NextResponse.json({message:"Not authenticated"}, {status:401});
+    const {id} = await req.json();
+    await prisma.position.delete({
+      where: {
+        id
+      }
+    });
+    return NextResponse.json({message:"Position deleted successfully"}, {status:200});
+  } catch (error) {
+    console.log("Error deleting position", error);
+    return NextResponse.json({message:"Error deleting position"}, {status:500});
+  }
+}

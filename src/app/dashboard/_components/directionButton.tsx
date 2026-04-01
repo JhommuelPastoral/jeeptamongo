@@ -78,16 +78,23 @@ export default function DirectionButton({setPosition, mapRef}: DirectButtonFunct
   // FILTER + LIMIT For Optimization since we do have a lot of data.
   const filteredFromStops = useMemo(() => {
     return jeepStopsData
-      ?.filter((stop: JeepStopProps) =>
-        stop.name.toLowerCase().includes(directionFrom.toLowerCase())
+      ?.filter((stop: JeepStopProps) => {
+          if(stop.name !== "Connector"){
+            return stop.name.toLowerCase().includes(directionFrom.toLowerCase())
+          }
+
+        }
       )
       .slice(0, 20);
   }, [jeepStopsData, directionFrom]);
 
   const filteredToStops = useMemo(() => {
     return jeepStopsData
-      ?.filter((stop: JeepStopProps) =>
-        stop.name.toLowerCase().includes(directionTo.toLowerCase())
+      ?.filter((stop: JeepStopProps) =>{
+          if(stop.name !== "Connector"){
+            return stop.name.toLowerCase().includes(directionTo.toLowerCase())
+          }
+        }
       )
       .slice(0, 20);
   }, [jeepStopsData, directionTo]);
@@ -112,7 +119,6 @@ export default function DirectionButton({setPosition, mapRef}: DirectButtonFunct
       });
       return;
     };
-    console.log(rawPosition);
     mapRef.current?.flyTo(filtered[0], 18);
     setPosition(filtered);
     setOpenDrawer(false);
@@ -173,10 +179,10 @@ export default function DirectionButton({setPosition, mapRef}: DirectButtonFunct
   };
 
   return (
-    <div>
+    <div className="w-full">
       <Drawer open={openDrawer} onOpenChange={setOpenDrawer} repositionInputs={false}>
         <DrawerTrigger asChild>
-          <Button>Get Direction</Button>
+          <Button className="w-full">Get Direction</Button>
         </DrawerTrigger>
 
         <DrawerContent className="px-4 pb-[env(safe-area-inset-bottom)] flex flex-col max-h-[85svh] z-1003">
