@@ -22,26 +22,37 @@ export async function GET(req: Request) {
   try {
     const isAuthenticated = await isSessionAuth();
     if(!isAuthenticated) return NextResponse.json({message:"Not authenticated"}, {status:401});
+    // const routeStops = await prisma.routeStop.findMany({
+    //   include:{
+    //     stop:{
+    //       include: {
+    //         position: {
+    //           omit:{
+    //             id: true,
+    //             stopId: true
+    //           }
+    //         }
+    //       },
+    //       omit:{
+    //         id: true
+    //       }
+    //     },
+    //     route: true
+    //   },
+    //   orderBy: {
+    //     order: "asc"
+    //   }
+    // });
     const routeStops = await prisma.routeStop.findMany({
       include:{
         stop:{
           include: {
-            position: {
-              omit:{
-                id: true,
-                stopId: true
-              }
-            }
-          },
-          omit:{
-            id: true
+            position: true
           }
         },
-        route: true
-      },
-      orderBy: {
-        order: "asc"
+        route:true
       }
+    
     });
     return NextResponse.json({message:"Route stops fetched successfully", routeStops}, {status:200});
   } catch (error) {

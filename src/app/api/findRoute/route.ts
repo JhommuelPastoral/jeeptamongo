@@ -25,9 +25,9 @@ type RouteStop = {
 function getNormalizedRoutes(routeStop: RouteStop[], isReversed: boolean) {
   const routes = routeStop.map((routeStop: RouteStop) => {
     const positions = routeStop.stop.position;
-
+    const canReverse = routeStop.canReverse;
     let selectedPositions;
-    if (isReversed) {
+    if (isReversed && canReverse) {
       // When reversed, try to use "Reverse" positions first
       const reversePositions = positions.filter(p => p.direction === "Reverse");
 
@@ -96,7 +96,7 @@ export async function POST(req: Request) {
       const maxOrder = Math.max(from, to);
       const canReverseFrom = fromRouteStops.canReverse;
       const isReversed = from > to;
-
+      console.log("Can Reverse From:", canReverseFrom);
       // This Case is when, we are going back to the start of the route, when the route is cannot be reversed or no bidirectional route
       // First is to get all the routes that can be reversed, must be greater than minOrder, sorted by order desc
       // Second is to get all the routes that cannot be reversed, must be greater than or equal to maxOrder, sorted by order asc
@@ -154,9 +154,10 @@ export async function POST(req: Request) {
           }
         });
         const allRoutes = [...allCantReverseRoute, ...allCanReverseRoute];
+        console.log("All Routes", allCanReverseRoute);
         const finalRoute = getNormalizedRoutes(allRoutes, isReversed);
         if(finalRoute.length === 0) return NextResponse.json({ message: "Route not found" }, { status: 404 });
-        await redis.set(redisKey, finalRoute);
+        // await redis.set(redisKey, finalRoute);
         return NextResponse.json({ message: "Route found", route: finalRoute }, { status: 200 });
       }
       
@@ -187,13 +188,13 @@ export async function POST(req: Request) {
         });
         const finalRoute = getNormalizedRoutes(route, isReversed);
         if(finalRoute.length === 0) return NextResponse.json({ message: "Route not found" }, { status: 404 });
-        await redis.set(redisKey, finalRoute);
+        // await redis.set(redisKey, finalRoute);
         return NextResponse.json({ message: "Route found", route: finalRoute }, { status: 200 });
       }
 
     }
     // Transfer Jeep Logic Hell NAHH HOW TO DO THIS DAWG
-    return NextResponse.json({ message: "Route found"}, { status: 200 });
+    // return NextResponse.json({ message: "Route found"}, { status: 200 });
   } catch (error) {
     console.error("Error finding route", error);
     return NextResponse.json({ message: "Server error" },{ status: 500 });
