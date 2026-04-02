@@ -39,6 +39,44 @@ type Location = {
 };
 
 type Position = [number, number];
+type RouteMap = {
+  jeepName: string;
+  color: string;
+  position: Position[];
+}
+
+// ----------------------------
+// Helper: Find closest index
+// ----------------------------
+const findClosestIndex = (polyline: Position[], current: Location) => {
+  let minDistance = Infinity;
+  let closestIndex = 0;
+
+  polyline.forEach(([lat, lng], index) => {
+    const dist = harversineFormula(
+      current.lat,
+      current.lng,
+      lat,
+      lng
+    );
+
+    if (dist < minDistance) {
+      minDistance = dist;
+      closestIndex = index;
+    }
+  });
+
+  return closestIndex;
+};
+
+// ----------------------------
+// Truncate segment based on current position
+// ----------------------------
+const truncateSegment = (segment: RouteMap, current: Location) => {
+  if (!segment.position.length) return [];
+  const index = findClosestIndex(segment.position, current);
+  return index > 0 ? segment.position.slice(index) : segment.position;
+};
 
 export default function Dashboard() {
   const [currentPosition, setCurrentPosition] = useState<Location>({ lat: 0, lng: 0 });
@@ -49,8 +87,11 @@ export default function Dashboard() {
   const [theme, setTheme] = useState<string>("");
   const mapRef = useRef<LeaftletMap | null>(null);
   const [gpsError, setGpsError] = useState(false);
-  const [position, setPosition] = useState<Position[]>([]);
+
   const isArrived = useRef<boolean>(false);
+  const [position, setPosition] = useState<Position[]>([]);
+  const [routeMap, setRouteMap] = useState<Map<string, RouteMap>>(new Map());
+
   // Get current position
   useEffect(() => {
       const watchId = navigator.geolocation.watchPosition(
@@ -131,49 +172,77 @@ export default function Dashboard() {
     }
   };
 
-  const findClosestIndex = (polyline: Position[], current: Location) => {
-    let minDistance = Infinity;
-    let closestIndex = 0;
+  // This should Be deleted when the Visible Routes is implemented
+  // const visiblePolyline = useMemo(() => {
+  //   if (!position.length) return [];
+  //   const index = findClosestIndex(position, currentPosition);
+  //   return index > 0 ? position.slice(index) : position;
+  // }, [position, currentPosition]);
 
-    polyline.forEach(([lat, lng], index) => {
-      const dist = harversineFormula(
-        current.lat,
-        current.lng,
-        lat,
-        lng
-      );
+  //  * visibleRoutes: Memoized function that returns an array of modified route objects
+  //  * based on the routeMap and currentPosition. Each route object has a position property
+  //  * that has been truncated to only show the part of the route that is visible from the
+  //  * currentPosition.
+  //  * Still on testing
+  const visibleRoutes = useMemo(() => {
+    if (routeMap.size === 0) return [];
 
-      if (dist < minDistance) {
-        minDistance = dist;
-        closestIndex = index;
-      }
+    return Array.from(routeMap.values()).map((route) => {
+      return {
+        ...route,
+        position: truncateSegment(route, currentPosition),
+      };
     });
+  }, [routeMap, currentPosition]);
 
-    return closestIndex;
-  };
-
-  const visiblePolyline = useMemo(() => {
-    if (!position.length) return [];
-    const index = findClosestIndex(position, currentPosition);
-    return index > 0 ? position.slice(index) : position;
-  }, [position, currentPosition]);
-
-  // Set isArrived when position changes
-  useEffect(() => { 
-    isArrived.current = false;
-  }, [position]);
-  
-  // Show Toast when Arrived and set isArrived
+  // Get the last Key of the routeMap
+  const lastSegment = useMemo(() => {
+    if(routeMap.size === 0) return null;
+    const lastKey = Array.from(routeMap.keys())[routeMap.size - 1];
+    return routeMap.get(lastKey) || null;
+  }, [routeMap]);
+  // Handle Toast when Arrived at destination
   useEffect(() => {
-    if(visiblePolyline.length < 2 && visiblePolyline.length > 0 && !isArrived.current){
+    if (!lastSegment) return;
+
+    const remaining = truncateSegment(lastSegment, currentPosition);
+
+    // Only update if positions are different
+    if (remaining.length !== lastSegment.position.length) {
+      setRouteMap((prev) => {
+        const newMap = new Map(prev);
+        newMap.set(lastSegment.jeepName, { ...lastSegment, position: remaining });
+        return newMap;
+      });
+    }
+    // Check arrival
+    if (remaining.length < 2 && !isArrived.current) {
       isArrived.current = true;
       toast.success("Arrived at destination", { position: "top-center" });
-      if ("vibrate" in navigator) {
-        navigator.vibrate([200, 100, 200, 100, 400]);
-      }
-
+      if ("vibrate" in navigator) navigator.vibrate([200, 100, 200, 100, 400]);
     }
-  }, [visiblePolyline]); 
+  }, [currentPosition, lastSegment]);
+
+  // Set isArrived when position changes
+  useEffect(() => {
+    isArrived.current = false;
+  }, [routeMap]);
+
+  // Set isArrived when position changes
+  // useEffect(() => { 
+  //   isArrived.current = false;
+  // }, [position]);
+  
+  // Show Toast when Arrived and set isArrived
+  // useEffect(() => {
+  //   if(visiblePolyline.length < 2 && visiblePolyline.length > 0 && !isArrived.current){
+  //     isArrived.current = true;
+  //     toast.success("Arrived at destination", { position: "top-center" });
+  //     if ("vibrate" in navigator) {
+  //       navigator.vibrate([200, 100, 200, 100, 400]);
+  //     }
+  //   }
+  // }, [visiblePolyline]); 
 
   // Set View
   const handleSetView = () => {
@@ -182,11 +251,12 @@ export default function Dashboard() {
     }
   };
 
-  if(gpsError) return <EnableLocationPermissionError />
+  if(gpsError) return <EnableLocationPermissionError /> 
 
   if (currentPosition.lat === 0 && currentPosition.lng === 0) {
     return <Loading title="map"/>;
   }
+
   if(!session?.user) return <Loading title="session" />
   return (
     <div className="w-screen h-dvh relative">
@@ -215,7 +285,20 @@ export default function Dashboard() {
             }}
             className="animate-pulse"
           />        
-          {position.length > 0 && (
+
+          {visibleRoutes.map((route) => {
+            if (route.position.length < 1) return null;
+            return (
+              <Polyline
+                key={route.jeepName}
+                positions={route.position}
+                color={route.color}
+                weight={3}
+              />
+            );
+          })}
+
+          {/* {position.length > 0 && (
             <>
               <Polyline 
                 positions={position}
@@ -223,7 +306,7 @@ export default function Dashboard() {
                 weight={3}
               />
             </>
-          )}
+          )} */}
         </MapContainer>   
       </Suspense>
 
@@ -282,12 +365,26 @@ export default function Dashboard() {
 
         </div>
       </div>
+      
+      {/* Bottom Left routeMap Jeeps */}
+      <div className="absolute bottom-0 left-0 z-1000">
+        <div className="flex flex-col items-start gap-2 p-4">
+          {Array.from(routeMap.values()).map((route) => (
+            <div key={route.jeepName} className="flex items-center gap-2">
+              <div className={`w-3 h-3 rounded-full`} style={{
+                backgroundColor: route.color,
+              }} />
+              <p className={`${theme === "dark" ? "text-white" : "text-black"} text-sm`}>{route.jeepName} Jeep Route</p>
+            </div>
+          ))}
+        </div>
+      </div>
 
       {/* Controls */}
       <div className="bottom-0 right-0 absolute">
         <div className="flex flex-col items-start gap-2 p-4">
           <Button onClick={handleSetView} className="cursor-pointer w-full">Am I Lost?</Button>
-          <DirectionButton setPosition={setPosition} mapRef={mapRef}/>
+          <DirectionButton setPosition={setPosition} mapRef={mapRef} setRouteMap={setRouteMap}/>
           <EmailButton email={session?.user?.email || ""}/>
           <ViewJeepStopsButton/>
         </div>

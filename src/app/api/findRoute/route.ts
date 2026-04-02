@@ -18,11 +18,21 @@ type RouteStop = {
   route: {
     id: string;
     name: string;
+    color: string;
   }
 };
 
+type RouteSimplified = {
+  jeepName: string;
+  color: string;
+  stop: {
+    name: string;
+    position: Position[];
+  };
+}
+
 // Helper Function: normalizes positions depending on direction
-function getNormalizedRoutes(routeStop: RouteStop[], isReversed: boolean) {
+function getNormalizedRoutes(routeStop: RouteStop[], isReversed: boolean): RouteStop[] {
   const routes = routeStop.map((routeStop: RouteStop) => {
     const positions = routeStop.stop.position;
     const canReverse = routeStop.canReverse;
@@ -54,6 +64,19 @@ function getNormalizedRoutes(routeStop: RouteStop[], isReversed: boolean) {
   return routes;
 }
 
+function getRouteSimplified(routeStops: RouteStop[]): RouteSimplified[]{
+  const simplified = routeStops.map((routeStop) => {
+    return {
+      jeepName: routeStop.route.name,
+      color: routeStop.route.color,
+      stop: {
+        name: routeStop.stop.name,
+        position: routeStop.stop.position
+      }
+    }
+  });
+  return simplified;
+}
 
 export async function POST(req: Request) {
   try {
@@ -96,7 +119,6 @@ export async function POST(req: Request) {
       const maxOrder = Math.max(from, to);
       const canReverseFrom = fromRouteStops.canReverse;
       const isReversed = from > to;
-      console.log("Can Reverse From:", canReverseFrom);
       // This Case is when, we are going back to the start of the route, when the route is cannot be reversed or no bidirectional route
       // First is to get all the routes that can be reversed, must be greater than minOrder, sorted by order desc
       // Second is to get all the routes that cannot be reversed, must be greater than or equal to maxOrder, sorted by order asc
@@ -154,11 +176,11 @@ export async function POST(req: Request) {
           }
         });
         const allRoutes = [...allCantReverseRoute, ...allCanReverseRoute];
-        console.log("All Routes", allCanReverseRoute);
         const finalRoute = getNormalizedRoutes(allRoutes, isReversed);
+        const simplifiedRoute = getRouteSimplified(finalRoute);
         if(finalRoute.length === 0) return NextResponse.json({ message: "Route not found" }, { status: 404 });
         // await redis.set(redisKey, finalRoute);
-        return NextResponse.json({ message: "Route found", route: finalRoute }, { status: 200 });
+        return NextResponse.json({ message: "Route found", route: simplifiedRoute }, { status: 200 });
       }
       
       // This Case is when the route has bidirectional route and can be reversed
@@ -187,9 +209,10 @@ export async function POST(req: Request) {
           }
         });
         const finalRoute = getNormalizedRoutes(route, isReversed);
+        const simplifiedRoute = getRouteSimplified(finalRoute);
         if(finalRoute.length === 0) return NextResponse.json({ message: "Route not found" }, { status: 404 });
         // await redis.set(redisKey, finalRoute);
-        return NextResponse.json({ message: "Route found", route: finalRoute }, { status: 200 });
+        return NextResponse.json({ message: "Route found", route: simplifiedRoute }, { status: 200 });
       }
 
     }

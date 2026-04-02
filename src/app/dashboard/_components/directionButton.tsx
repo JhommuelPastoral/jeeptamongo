@@ -36,29 +36,32 @@ type JeepStopProps = {
 
 type Position = [number, number];
 
-type RawPosition ={
-  id: string;
-  routeId: string;
-  stopId: string;
-  order: number;
-  stop:{
-    id: string;
+type RouteSimplified = {
+  jeepName: string;
+  color: string;
+  stop: {
     name: string;
-    position: [{lat: number, lng: number}];
-  };
-  route: {
-    id: string;
-    name: string;
+    position: {
+      lat: number;
+      lng: number;
+    }[];
   };
 }
 
 type DirectButtonFunctionProps = {
   setPosition: (position: Position[]) => void;
   mapRef: React.RefObject<LeaftletMap | null>;
+  setRouteMap: (routeMap: Map<string, RouteMap>) => void;
+}
+
+type RouteMap = {
+  jeepName: string;
+  color: string;
+  position: Position[];
 }
 
 
-export default function DirectionButton({setPosition, mapRef}: DirectButtonFunctionProps ) {
+export default function DirectionButton({setPosition, mapRef, setRouteMap}: DirectButtonFunctionProps ) {
   const [openDrawer, setOpenDrawer] = useState<boolean>(false);
 
   const [searchFrom, setSearchFrom] = useState<string>("");
@@ -71,7 +74,7 @@ export default function DirectionButton({setPosition, mapRef}: DirectButtonFunct
   const [openListDirectionTo, setOpenListDirectionTo] = useState<boolean>(true);
 
   const [isPending, startTransition] = useTransition();
-  const [rawPosition, setRawPosition] = useState<RawPosition[]>([]);
+  const [rawPosition, setRawPosition] = useState<RouteSimplified[]>([]);
   const { data: jeepStopsData, isLoading, isError } = useGetJeepStops();
   const { mutate: findRouteMutate, isPending: findRouteLoading } = useFindRoute();
 
@@ -82,7 +85,6 @@ export default function DirectionButton({setPosition, mapRef}: DirectButtonFunct
           if(stop.name !== "Connector"){
             return stop.name.toLowerCase().includes(directionFrom.toLowerCase())
           }
-
         }
       )
       .slice(0, 20);
@@ -99,28 +101,53 @@ export default function DirectionButton({setPosition, mapRef}: DirectButtonFunct
       .slice(0, 20);
   }, [jeepStopsData, directionTo]);
 
-
-  // Filter the jeep stops, send to parent
-  useEffect(() => {
-    if (rawPosition?.length === 0) return;
-
+  // Normalize the raw position data to be used in the map
+  const filteredRawPosition = useMemo(() => {
     const filtered = rawPosition
-      ?.map((raw: RawPosition) => {
+      ?.map((raw: RouteSimplified) => {
         return raw?.stop?.position?.map((pos: { lat: number; lng: number }) => [
           pos?.lat,
           pos?.lng,
         ] as Position) ?? [];
-      })
-      .flat();
+      }).flat();
+    return filtered;
+  },[rawPosition]);
+
+  const routeMap  = useMemo(() => {
+    const map = new Map<string, RouteMap>();
+    rawPosition?.forEach((raw: RouteSimplified) => {
+      const positions = raw?.stop?.position?.map((pos: { lat: number; lng: number }) => [pos?.lat,pos?.lng,] as Position) ?? [];
+      if(!map.has(raw?.jeepName)){
+        map.set(raw?.jeepName, {
+          jeepName: raw?.jeepName,
+          color: raw?.color,
+          position: positions
+        });
+      }
+      else{
+        const existing = map.get(raw?.jeepName);
+        if(existing) {
+          existing.position = [...existing.position, ...positions];
+        }
+      }
+
+    });
+    return map;
+  }, [rawPosition]);
+
+  // Filter the jeep stops, send to parent
+  useEffect(() => {
+    if (rawPosition?.length === 0) return;
     // Check if filtered is empty
-    if (filtered?.length === 0) {
+    if (filteredRawPosition?.length === 0 || routeMap.size === 0) {
       toast.error("Route not found", {
         position: "top-center",
       });
       return;
     };
-    mapRef.current?.flyTo(filtered[0], 18);
-    setPosition(filtered);
+    mapRef.current?.flyTo(filteredRawPosition[0], 18);
+    setPosition(filteredRawPosition);
+    setRouteMap(routeMap);
     setOpenDrawer(false);
   }, [rawPosition, setPosition, mapRef]);
 
