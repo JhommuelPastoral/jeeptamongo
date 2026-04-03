@@ -18,7 +18,7 @@ export async function POST(req:Request){
         }
       })
     }
-    return NextResponse.json({message:"Positions created successfully"}, {status:200});
+    return NextResponse.json({message:`Positions created successfully for stop ${stopId}`}, {status:200});
   } catch (error) {
     console.log("Error creating positions", error);
     return NextResponse.json({message:"Error creating positions"}, {status:500});

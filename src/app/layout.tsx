@@ -24,7 +24,7 @@ export const metadata: Metadata = {
   description: "JeepTa is a real-time jeepney tracking and navigation app designed to help commuters in Davao City travel smarter, faster, and more efficiently.",
   icons:{
     icon:"/logo.svg"
-  }
+  },
 };
 
 export default function RootLayout({
@@ -37,6 +37,7 @@ export default function RootLayout({
       lang="en"
       className={cn("h-full", "antialiased", geistSans.variable, geistMono.variable, "font-mono", jetbrainsMono.variable)}
     >
+      <meta name="google-site-verification" content="IrVDkTMO2zLnm-lz7ie-D2IQdtMkPSdsLA4yoM6JCro" />
       <body className="min-h-full flex flex-col">
         <QueryProvider>
           <SessionProvider>{children}</SessionProvider>

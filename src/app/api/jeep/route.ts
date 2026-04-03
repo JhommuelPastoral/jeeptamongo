@@ -32,7 +32,7 @@ export async function GET(req: Request) {
           where: {
             stop: {
               name: {
-                not: "Connector", 
+                not: {startsWith: "Connector"}, 
               },
             },
           },

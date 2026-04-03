@@ -166,7 +166,7 @@ export async function POST(req: Request) {
             routeId: fromMatch.routeId,
             canReverse: true,
             order:{
-              gt: minOrder
+              gte: minOrder
             }
           },
           orderBy: {
@@ -192,7 +192,7 @@ export async function POST(req: Request) {
             routeId: fromMatch.routeId,
             canReverse: false,
             order:{
-              gt: maxOrder
+              gte: maxOrder
             }
           },
           orderBy: {
@@ -227,7 +227,7 @@ export async function POST(req: Request) {
           where: {
             routeId: fromMatch.routeId,
             order: {
-              gte: isReversed ? minOrder +  1 : minOrder,
+              gt: minOrder,
               lte: maxOrder
             }
           },
