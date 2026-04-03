@@ -25,6 +25,9 @@ export const metadata: Metadata = {
   icons:{
     icon:"/logo.svg"
   },
+  verification:{
+    google:"IrVDkTMO2zLnm-lz7ie-D2IQdtMkPSdsLA4yoM6JCro"
+  }
 };
 
 export default function RootLayout({
@@ -37,7 +40,6 @@ export default function RootLayout({
       lang="en"
       className={cn("h-full", "antialiased", geistSans.variable, geistMono.variable, "font-mono", jetbrainsMono.variable)}
     >
-      <meta name="google-site-verification" content="IrVDkTMO2zLnm-lz7ie-D2IQdtMkPSdsLA4yoM6JCro" />
       <body className="min-h-full flex flex-col">
         <QueryProvider>
           <SessionProvider>{children}</SessionProvider>
