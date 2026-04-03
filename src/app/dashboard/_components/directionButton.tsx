@@ -197,7 +197,7 @@ export default function DirectionButton({setPosition, mapRef, setRouteMap}: Dire
         });
           setRawPosition(data?.route);
         },
-        onError: () => toast.error("Error finding route",{
+        onError: (data) => toast.error(data?.message ?? "Error finding route",{
           position: "top-center"
         }),
       },

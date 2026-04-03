@@ -22,7 +22,9 @@ export async function GET(req: Request) {
     // const stops = await prisma.stop.findMany({
     //   take: 49,
     // });
-    const stops = await prisma.stop.findMany({});
+    const stops = await prisma.stop.findMany({
+      distinct: ["name"],
+    });
     return NextResponse.json({message:"Stops fetched successfully", stops}, {status:200});
   } catch (error) {
     console.log("Error fetching stops", error);

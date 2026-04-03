@@ -33,7 +33,6 @@ model Stop{
   name String
   position Position[]
   routes RouteStop[]
-
   @@index([name])
 }
 
