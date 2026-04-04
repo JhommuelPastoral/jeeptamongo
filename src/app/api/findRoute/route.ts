@@ -3,6 +3,9 @@ import prisma from "@/lib/prisma";
 import redis from "@/lib/redis";
 import isSessionAuth from "@/helpers/isSessionAuth";
 
+
+// ========================================================= //
+// Types for the find Route API, WIll transfer after some refactoring
 type Position = { lat: number; lng: number; direction: string };
 type RouteStop = {
   id: string;
@@ -49,7 +52,7 @@ function getNormalizedRoutes(routeStop: RouteStop[], isReversed: boolean): Route
       const reversePositions = positions.filter(p => p.direction === "Reverse");
 
       if (reversePositions.length > 0) {
-        selectedPositions = [...reversePositions].reverse();
+        selectedPositions = [...reversePositions];
       } else {
         // fallback to forward but reversed order
         const forwardPositions = positions.filter(p => p.direction === "Forward");
@@ -128,7 +131,7 @@ export async function POST(req: Request) {
     // const toRouteStops = await prisma.routeStop.findMany({where: { stopId: toStop.id },});
 
     // Validate Route 
-    if (fromRouteStops.length === 0 || toRouteStops.length === 0) return NextResponse.json({ message: "Route not found" }, { status: 404 });
+    if (fromRouteStops.length === 0 || toRouteStops.length === 0) return NextResponse.json({ message: "Route not found " }, { status: 404 });
 
     // Check if it is a direct route
     // const isDirectRoute = fromRouteStops.some(from => toRouteStops.some(to => from.routeId === to.routeId));
@@ -137,123 +140,213 @@ export async function POST(req: Request) {
     const toRouteMap = new Map<string, RouteStopPrisma>(toRouteStops.map(routeStop => [routeStop.routeId, routeStop]));
     let fromMatch : RouteStopPrisma | null = null;
     let toMatch : RouteStopPrisma | null = null;
-    // Loop through fromRouteStops and find the first match in toRouteMap, if found break the loop, if not continue until the end of the loop
+    const allMatchRoutes:[RouteStopPrisma, RouteStopPrisma][] = [];
+    // Loop through fromRouteStops and find the first match in toRouteMap, if found save push to allMatchRoutes, if not continue until the end of the loop
     for (const from of fromRouteStops) {
       const match = toRouteMap.get(from.routeId);
       if (match) {
         fromMatch = from;
         toMatch = match;
-        break;
+        allMatchRoutes.push([fromMatch, toMatch]);
+        // break;
       }
-    }
+    };
     // Direct Route Found 
-    if (fromMatch && toMatch) {
-      const from = fromMatch.order;
-      const to = toMatch.order;
-      const minOrder = Math.min(from, to);
-      const maxOrder = Math.max(from, to);
-      const canReverseFrom = fromMatch?.canReverse;
-      const isReversed = from > to;
-
-      // This Case is when, we are going back to the start of the route, when the route is cannot be reversed or no bidirectional route
-      // First is to get all the routes that can be reversed, must be greater than minOrder, sorted by order desc
-      // Second is to get all the routes that cannot be reversed, must be greater than or equal to maxOrder, sorted by order asc
-      // Combined them and get the final route
-
-      if(!canReverseFrom && isReversed) {
-        const allCanReverseRoute = await prisma.routeStop.findMany({
-          where:{
-            routeId: fromMatch.routeId,
-            canReverse: true,
-            order:{
-              gte: minOrder
-            }
-          },
-          orderBy: {
-            order: "desc"
-          },
-          include: {
-            stop: {
-              include: {
-                position: {
-                  omit: {
-                    id: true,
-                    stopId: true
+    if (allMatchRoutes.length > 0) {
+      const allDirectRoutes: RouteSimplified[] = [];
+      for(const [fromMatch, toMatch] of allMatchRoutes){
+        const from = fromMatch.order;
+        const to = toMatch.order;
+        const minOrder = Math.min(from, to);
+        const maxOrder = Math.max(from, to);
+        const canReverseFrom = fromMatch?.canReverse;
+        const canReverseTo = toMatch?.canReverse;
+        const isReversed = from > to;
+  
+        // This Case is when, we are going back to the start of the route, when the route is cannot be reversed or no bidirectional route
+        // First is to get all the routes that can be reversed, must be greater than minOrder, sorted by order desc
+        // Second is to get all the routes that cannot be reversed, must be greater than or equal to maxOrder, sorted by order asc
+        // Combined them and get the final route
+  
+        if(!canReverseFrom && isReversed) {
+          // Check If the user is trying to reverse a route that cannot be reversed, if both from and to cannot be reversed, then we will get all the routes that cannot be reversed and reverse them, if there is no route that cannot be reversed, then we will return the route that can be reversed but in reverse order
+          // I dunno why i work to this, for F sake this is a mess
+          if(!canReverseTo && !canReverseFrom){
+            const [allCantReverseRouteMinOrder, allCantReverseRouteMaxOrder] = await Promise.all([
+              await prisma.routeStop.findMany({
+                where:{
+                  routeId: fromMatch.routeId,
+                  canReverse: false,
+                  order:{
+                    lte: minOrder,
                   }
+                },
+                orderBy: {
+                  order: "asc"
+                },
+                include: {
+                  stop: {
+                    include: {
+                      position: {
+                        omit: {
+                          id: true,
+                          stopId: true
+                        },
+                        orderBy:{
+                          order: "asc",
+                        }
+
+                      }
+                    }
+                  },
+                  route: true
                 }
-              }
-            },
-            route: true
+              }),
+              await prisma.routeStop.findMany({
+                where:{
+                  routeId: fromMatch.routeId,
+                  canReverse: false,
+                  order:{
+                    gt: maxOrder,
+                  }
+                },
+                orderBy: {
+                  order: "asc"
+                },
+                include: {
+                  stop: {
+                    include: {
+                      position: {
+                        omit: {
+                          id: true,
+                          stopId: true
+                        },
+                        orderBy:{
+                          order: "asc",
+                        }
+                      }
+                    }
+                  },
+                  route: true
+                }
+              })            
+            ]);
+            const allCantReverseRoute = [...allCantReverseRouteMaxOrder, ...allCantReverseRouteMinOrder];
+            const finalRoute = getNormalizedRoutes(allCantReverseRoute, isReversed);
+            const simplifiedRoute = getRouteSimplified(finalRoute);
+            if(finalRoute.length === 0) return NextResponse.json({ message: "Route not found " }, { status: 404 });
+            allDirectRoutes.push(...simplifiedRoute);
+            return NextResponse.json({ message: "Route found", route: simplifiedRoute }, { status: 200 });
           }
-        });
+          else{
+            const [allCanReverseRoute, allCantReverseRoute] = await Promise.all([
+              await prisma.routeStop.findMany({
+                where:{
+                  routeId: fromMatch.routeId,
+                  canReverse: true,
+                  order:{
+                    gt: minOrder
+                  }
+                },
+                orderBy: {
+                  order: "desc"
+                },
+                include: {
+                  stop: {
+                    include: {
+                      position: {
+                        omit: {
+                          id: true,
+                          stopId: true
+                        },
+                        orderBy:{
+                          order: "asc",
+                        }
+                      }
+                    }
+                  },
+                  route: true
+                }
+              }),
+              await prisma.routeStop.findMany({
+                where:{
+                  routeId: fromMatch.routeId,
+                  canReverse: false,
+                  order:{
+                    gt: maxOrder
+                  }
+                },
+                orderBy: {
+                  order: "asc"
+                },
+                include: {
+                  stop: {
+                    include: {
+                      position: {
+                        omit: {
+                          id: true,
+                          stopId: true
+                        },
+                        orderBy:{
+                          order: "asc",
+                        }
+                      }
+                    }
+                  },
+                  route: true
+                }
+              })        
+            ]);
+            const allRoutes = [...allCantReverseRoute, ...allCanReverseRoute];
+            const finalRoute = getNormalizedRoutes(allRoutes, isReversed);
+            const simplifiedRoute = getRouteSimplified(finalRoute);
+            if(finalRoute.length === 0) return NextResponse.json({ message: "Route not found " }, { status: 404 });
+            // await redis.set(redisKey, finalRoute);
+            // return NextResponse.json({ message: "Route found", route: simplifiedRoute }, { status: 200 });
+            allDirectRoutes.push(...simplifiedRoute);
+
+          }
+        }
         
-        const allCantReverseRoute = await prisma.routeStop.findMany({
-          where:{
-            routeId: fromMatch.routeId,
-            canReverse: false,
-            order:{
-              gte: maxOrder
-            }
-          },
-          orderBy: {
-            order: "asc"
-          },
-          include: {
-            stop: {
-              include: {
-                position: {
-                  omit: {
-                    id: true,
-                    stopId: true
-                  }
-                }
+        // This Case is when the route has bidirectional route and can be reversed
+        else{
+          const route = await prisma.routeStop.findMany({
+            where: {
+              routeId: fromMatch.routeId,
+              order: {
+                gt: minOrder,
+                lte: maxOrder
               }
             },
-            route: true
-          }
-        });
-
-        const allRoutes = [...allCantReverseRoute, ...allCanReverseRoute];
-        const finalRoute = getNormalizedRoutes(allRoutes, isReversed);
-        const simplifiedRoute = getRouteSimplified(finalRoute);
-        if(finalRoute.length === 0) return NextResponse.json({ message: "Route not found" }, { status: 404 });
-        // await redis.set(redisKey, finalRoute);
-        return NextResponse.json({ message: "Route found", route: simplifiedRoute }, { status: 200 });
-      }
-      
-      // This Case is when the route has bidirectional route and can be reversed
-      else{
-        const route = await prisma.routeStop.findMany({
-          where: {
-            routeId: fromMatch.routeId,
-            order: {
-              gt: minOrder,
-              lte: maxOrder
-            }
-          },
-          orderBy: { order: isReversed ? "desc" : "asc" },
-          include: {
-            stop: {
-              include: {
-                position: {
-                  omit: {
-                    id: true,
-                    stopId: true
+            orderBy: { order: isReversed ? "desc" : "asc" },
+            include: {
+              stop: {
+                include: {
+                  position: {
+                    omit: {
+                      id: true,
+                      stopId: true
+                    },
+                    orderBy:{
+                      order: "asc",
+                    }
                   }
                 }
-              }
-            },
-            route: true
-          }
-        });
-        const finalRoute = getNormalizedRoutes(route, isReversed);
-        const simplifiedRoute = getRouteSimplified(finalRoute);
-        if(finalRoute.length === 0) return NextResponse.json({ message: "Route not found" }, { status: 404 });
-        // await redis.set(redisKey, finalRoute);
-        return NextResponse.json({ message: "Route found", route: simplifiedRoute }, { status: 200 });
-      }
-
-    }
+              },
+              route: true
+            }
+          });
+          const finalRoute = getNormalizedRoutes(route, isReversed);
+          const simplifiedRoute = getRouteSimplified(finalRoute);
+          if(finalRoute.length === 0) return NextResponse.json({ message: "Route not found" }, { status: 404 });
+          // await redis.set(redisKey, finalRoute);
+          // return NextResponse.json({ message: "Route found", route: simplifiedRoute }, { status: 200 });
+          allDirectRoutes.push(...simplifiedRoute);
+        }
+      };
+      if(allDirectRoutes.length === 0) return NextResponse.json({ message: "Route not found" }, { status: 404 });
+      return NextResponse.json({ message: "Route found", route: allDirectRoutes }, { status: 200 });
+    };
     // Transfer Jeep Logic Hell NAHH HOW TO DO THIS DAWG
     // return NextResponse.json({ message: "Route found"}, { status: 200 });
   } catch (error) {

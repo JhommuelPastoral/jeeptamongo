@@ -24,6 +24,7 @@ export async function GET(req: Request) {
     // });
     const stops = await prisma.stop.findMany({
       distinct: ["name"],
+      orderBy:{id:"asc"}
     });
     return NextResponse.json({message:"Stops fetched successfully", stops}, {status:200});
   } catch (error) {

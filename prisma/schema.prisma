@@ -40,9 +40,11 @@ model Position{
   id String @id @default(auto()) @map("_id") @db.ObjectId
   lat Float
   lng Float 
+  order Int
   direction String @default("Forward")
   stopId String @db.ObjectId
   stop Stop @relation(fields: [stopId], references: [id])
+  @@index([order])
 }
 
 model RouteStop {

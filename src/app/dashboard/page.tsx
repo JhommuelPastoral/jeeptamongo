@@ -84,7 +84,7 @@ export default function Dashboard() {
   const prevPositionRef = useRef<Location>({ lat: 0, lng: 0 });
   const [currentSpeed, setCurrentSpeed] = useState<number>(0);
   const { data: session } = useSession(); // Session for the user jwt
-  const [theme, setTheme] = useState<string>("");
+  const [theme, setTheme] = useState<string>("light");
   const mapRef = useRef<LeaftletMap | null>(null);
   const [gpsError, setGpsError] = useState(false);
 
@@ -158,7 +158,7 @@ export default function Dashboard() {
   // Get Theme
   useEffect(() => {
     setTheme(localStorage.getItem("jeepTa-Theme") || "light");
-  }, []);
+  }, [theme]);
 
   // Change Theme
   const handleThemeChange = () => {
@@ -201,6 +201,7 @@ export default function Dashboard() {
     const lastKey = Array.from(routeMap.keys())[routeMap.size - 1];
     return routeMap.get(lastKey) || null;
   }, [routeMap]);
+
   // Handle Toast when Arrived at destination
   useEffect(() => {
     if (!lastSegment) return;
@@ -274,13 +275,17 @@ export default function Dashboard() {
           maxZoom={18}
           ref={mapRef}
         >
-          <TileLayer url={`https://{s}.basemaps.cartocdn.com/${theme}_all/{z}/{x}/{y}{r}.png`} />
+          {/* <TileLayer url={`https://{s}.basemaps.cartocdn.com/${theme}_all/{z}/{x}/{y}{r}.png`} /> */}
+          <TileLayer url={`https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}`} />
           <CircleMarker
             center={[currentPosition.lat, currentPosition.lng]}
             radius={5}
             pathOptions={{
-              color: theme === "dark" ? "white" : "black",
-              fillColor: theme === "dark" ? "white" : "black",
+              // color: theme === "dark" ? "white" : "black",
+              color: "black",
+              fillColor: "black",
+              weight: 5,
+              // fillColor: theme === "dark" ? "white" : "black",
               fillOpacity: 1,
             }}
             className="animate-pulse"
@@ -302,8 +307,8 @@ export default function Dashboard() {
             <>
               <Polyline 
                 positions={position}
-                color={theme === "dark" ? "white" : "black"}
-                weight={3}
+                color={"#193cb8"}
+                weight={5}
               />
             </>
           )}
@@ -350,7 +355,7 @@ export default function Dashboard() {
             <DropdownMenuContent align="end">
               <DropdownMenuGroup>
                 <DropdownMenuItem onClick={handleThemeChange}>
-                  {theme === "dark" ? "Light Mode" : "Dark Mode"}
+                  {theme === "dark" ? "Dark Mode" : "Light Mode"}
                 </DropdownMenuItem>
                 <DropdownMenuItem>
                   Notifications

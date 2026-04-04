@@ -8,17 +8,20 @@ export async function POST(req:Request){
     if(!isAuthenticated) return NextResponse.json({message:"Not authenticated"}, {status:401});
 
     const {positions, stopId, direction} = await req.json();
+    let order = 1;
     for(const pos of positions){
       await prisma.position.create({
         data:{
           lng: pos[0],
           lat: pos[1],
           stopId,
-          direction
+          direction,
+          order
         }
-      })
+      });
+      order++;
     }
-    return NextResponse.json({message:`Positions created successfully for stop ${stopId}`}, {status:200});
+    return NextResponse.json({message:`Positions created successfully for stop ${stopId} ${direction}`}, {status:200});
   } catch (error) {
     console.log("Error creating positions", error);
     return NextResponse.json({message:"Error creating positions"}, {status:500});
