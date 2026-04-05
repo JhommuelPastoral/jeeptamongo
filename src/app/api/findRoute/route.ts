@@ -109,7 +109,7 @@ function getRouteSimplified(routeStops: RouteStop[]): RouteSimplified[]{
 
 function filterDirectRouteStops({ allRouteStops, minOrder, maxOrder, canReverseFrom, canReverseTo, isReversed }: FilterRouteStopsParams): RouteStop[] {
   
-  // 
+
   if(!canReverseFrom && isReversed && !canReverseTo) {
     const allCantReverseRouteMinOrder = allRouteStops.filter(routeStop => !routeStop.canReverse && routeStop.order <= minOrder).sort((a, b) => a.order - b.order);
     const allCantReverseRouteMaxOrder = allRouteStops.filter(routeStop => !routeStop.canReverse && routeStop.order > maxOrder).sort((a, b) => a.order - b.order);
@@ -121,7 +121,7 @@ function filterDirectRouteStops({ allRouteStops, minOrder, maxOrder, canReverseF
     return [...allCantReverseRoute, ...allCanReverseRoute];
   }
   else{
-    const route = allRouteStops.filter(routeStop => routeStop.order > minOrder && routeStop.order <= maxOrder).sort((a, b) => a.order - b.order);
+    const route = allRouteStops.filter(routeStop => routeStop.order > minOrder && routeStop.order <= maxOrder).sort((a, b) => isReversed ? b.order - a.order : a.order - b.order);
     return route;
   }
 }

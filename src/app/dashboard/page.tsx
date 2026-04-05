@@ -311,7 +311,7 @@ export default function Dashboard() {
             className="animate-pulse"
           />        
 
-          {visibleRoutes.map((route) => {
+          {/* {visibleRoutes.map((route) => {
             if (route.position.length < 1) return null;
             return (
               <Polyline
@@ -321,7 +321,7 @@ export default function Dashboard() {
                 weight={3}
               />
             );
-          })}
+          })} */}
 {/* 
           {position.length > 0 && (
             <>
@@ -332,7 +332,7 @@ export default function Dashboard() {
               />
             </>
           )} */}
-{/* 
+
           {uniquePositions.length > 0 && (
             <>
               <Polyline 
@@ -341,7 +341,7 @@ export default function Dashboard() {
                 weight={5}
               />
             </>
-          )} */}
+          )}
         </MapContainer>   
       </Suspense>
 
