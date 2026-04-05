@@ -59,8 +59,9 @@ model RouteStop {
   @@index(fields: [routeId, order])
   @@index(fields: [stopId])
   @@index(fields: [routeId, canReverse, order])
-
 }
+
+
 model EmailLog {
   id String @id @default(auto()) @map("_id") @db.ObjectId
   email String 

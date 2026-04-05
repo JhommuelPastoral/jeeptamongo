@@ -252,11 +252,28 @@ export default function Dashboard() {
     }
   };
 
+  // For TroubleShooting Only Do Not Use In Production 
+  const uniquePositions = useMemo(() => {
+    const seen = new Set<string>();
+    const result: [number, number][] = [];
+
+    for (const [lng, lat] of position) {
+      const key = `${lng},${lat}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        result.push([lng, lat]);
+      }
+    }
+
+    return result;
+  }, [position]);
+
   if(gpsError) return <EnableLocationPermissionError /> 
 
   if (currentPosition.lat === 0 && currentPosition.lng === 0) {
     return <Loading title="map"/>;
   }
+
 
   if(!session?.user) return <Loading title="session" />
   return (
@@ -269,14 +286,17 @@ export default function Dashboard() {
           className="w-full h-full z-0"
           zoomControl={false}
           attributionControl={false}
-          maxBounds={[[6.8, 125.1],[7.3, 125.8]]}
+          // maxBounds={[[6.8, 125.1],[7.3, 125.8]]}
+          maxBounds={[[6.869848, 125.407562], [7.323649, 125.682220]]}
           maxBoundsViscosity={1}
-          minZoom={12}
+          // Default 12 for minZoom
+          minZoom={14} 
           maxZoom={18}
           ref={mapRef}
         >
           {/* <TileLayer url={`https://{s}.basemaps.cartocdn.com/${theme}_all/{z}/{x}/{y}{r}.png`} /> */}
-          <TileLayer url={`https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}`} />
+          {/* <TileLayer url={`https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}`} /> */}
+          <TileLayer url={`https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png`} />
           <CircleMarker
             center={[currentPosition.lat, currentPosition.lng]}
             radius={5}
@@ -302,11 +322,21 @@ export default function Dashboard() {
               />
             );
           })} */}
-
+{/* 
           {position.length > 0 && (
             <>
               <Polyline 
                 positions={position}
+                color={"#193cb8"}
+                weight={5}
+              />
+            </>
+          )} */}
+
+          {uniquePositions.length > 0 && (
+            <>
+              <Polyline 
+                positions={uniquePositions}
                 color={"#193cb8"}
                 weight={5}
               />

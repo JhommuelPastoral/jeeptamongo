@@ -62,29 +62,30 @@ export async function GET(req: Request) {
 }
 
 
-export async function PATCH(req:Request) {
-  try {
-    const isAuthenticated = await isSessionAuth();
-    if(!isAuthenticated) return NextResponse.json({message:"Not authenticated"}, {status:401});
+// export async function PATCH(req:Request) {
+//   try {
+//     const isAuthenticated = await isSessionAuth();
+//     if(!isAuthenticated) return NextResponse.json({message:"Not authenticated"}, {status:401});
 
-    const routeStops = await prisma.routeStop.updateMany({
-      where: {
-        order: {
-          gt: 57
-        }
-      },
-      data: {
-        canReverse: false
-      }
-    });
+//     const routeStops = await prisma.routeStop.updateMany({
+//       where: {
+//         order: {
+//           gte: 46
+//         },
+//         routeId:"69d0e6b0f5d4a9b11148d5d8"
+//       },
+//       data: {
+//         canReverse: false
+//       }
+//     });
 
-    return NextResponse.json({message:"Route stops patched successfully"}, {status:200});
+//     return NextResponse.json({message:"Route stops patched successfully"}, {status:200});
 
-  } catch (error) {
-    console.log("Error patching stops", error);
-    return NextResponse.json({message:"Error patching stops"}, {status:500});    
-  }
-}
+//   } catch (error) {
+//     console.log("Error patching stops", error);
+//     return NextResponse.json({message:"Error patching stops"}, {status:500});    
+//   }
+// }
 
 
 

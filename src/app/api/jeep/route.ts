@@ -61,20 +61,20 @@ export async function GET(req: Request) {
   }
 }
 
-export async function PATCH(req:Request) {
-  try {
-    const {id, color} = await req.json();
-    const jeep = await prisma.jeepRoute.update({
-      where: {
-        id
-      },
-      data: {
-        color
-      }
-    });
-    return NextResponse.json({message:"Jeep updated successfully"}, {status:200});
-  } catch (error) {
-    console.log("Error updating jeep", error);
-    return NextResponse.json({message:"Error updating jeep"}, {status:500});
-  }
-}
+// export async function PATCH(req:Request) {
+//   try {
+//     const {id, color} = await req.json();
+//     const jeep = await prisma.jeepRoute.update({
+//       where: {
+//         id
+//       },
+//       data: {
+//         color
+//       }
+//     });
+//     return NextResponse.json({message:"Jeep updated successfully"}, {status:200});
+//   } catch (error) {
+//     console.log("Error updating jeep", error);
+//     return NextResponse.json({message:"Error updating jeep"}, {status:500});
+//   }
+// }

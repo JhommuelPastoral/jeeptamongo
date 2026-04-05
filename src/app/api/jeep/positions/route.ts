@@ -40,46 +40,46 @@ export async function GET(req:Request) {
   }
 }
 
-export async function PATCH(req:Request) {
-  try {
-    const isAuthenticated = await isSessionAuth();
-    if(!isAuthenticated) return NextResponse.json({message:"Not authenticated"}, {status:401});
+// export async function PATCH(req:Request) {
+//   try {
+//     const isAuthenticated = await isSessionAuth();
+//     if(!isAuthenticated) return NextResponse.json({message:"Not authenticated"}, {status:401});
     
-    // Get all stops from prisma
-    const stops = await prisma.stop.findMany({});
+//     // Get all stops from prisma
+//     const stops = await prisma.stop.findMany({});
 
-    for(const stop of stops){
-      await prisma.position.updateMany({
-        where: {
-          stopId: stop.id as string
-        },
-        data:{
-          direction: "Forward"
-        }
-      })
-    }
-    return NextResponse.json({message:"Stops patched successfully"}, {status:200});
+//     for(const stop of stops){
+//       await prisma.position.updateMany({
+//         where: {
+//           stopId: stop.id as string
+//         },
+//         data:{
+//           direction: "Forward"
+//         }
+//       })
+//     }
+//     return NextResponse.json({message:"Stops patched successfully"}, {status:200});
     
     
-  } catch (error) {
-    console.log("Error patching stops", error);
-    return NextResponse.json({message:"Error patching stops"}, {status:500});
-  }
-}
+//   } catch (error) {
+//     console.log("Error patching stops", error);
+//     return NextResponse.json({message:"Error patching stops"}, {status:500});
+//   }
+// }
 
-export async function DELETE(req:Request) {
-  try {
-    const isAuthenticated = await isSessionAuth();
-    if(!isAuthenticated) return NextResponse.json({message:"Not authenticated"}, {status:401});
-    const {id} = await req.json();
-    await prisma.position.delete({
-      where: {
-        id
-      }
-    });
-    return NextResponse.json({message:"Position deleted successfully"}, {status:200});
-  } catch (error) {
-    console.log("Error deleting position", error);
-    return NextResponse.json({message:"Error deleting position"}, {status:500});
-  }
-}
+// export async function DELETE(req:Request) {
+//   try {
+//     const isAuthenticated = await isSessionAuth();
+//     if(!isAuthenticated) return NextResponse.json({message:"Not authenticated"}, {status:401});
+//     const {id} = await req.json();
+//     await prisma.position.deleteMany({
+//       where: {
+//         stopId: id
+//       }
+//     });
+//     return NextResponse.json({message:"Position deleted successfully"}, {status:200});
+//   } catch (error) {
+//     console.log("Error deleting position", error);
+//     return NextResponse.json({message:"Error deleting position"}, {status:500});
+//   }
+// }
