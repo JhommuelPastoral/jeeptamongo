@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { useState, useMemo, useTransition, useEffect } from "react";
+import { useState, useMemo, useTransition, useEffect, useCallback } from "react";
 import type { Map as LeaftletMap } from "leaflet";
 import {
   Drawer,
@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/drawer";
 
 import { LoaderCircle } from "lucide-react";
-
+import SelectJeepRouteModal from "./selectJeepRouteModal";
 import {
   Command,
   CommandEmpty,
@@ -77,6 +77,10 @@ export default function DirectionButton({setPosition, mapRef, setRouteMap}: Dire
   const [rawPosition, setRawPosition] = useState<RouteSimplified[]>([]);
   const { data: jeepStopsData, isLoading, isError } = useGetJeepStops();
   const { mutate: findRouteMutate, isPending: findRouteLoading } = useFindRoute();
+
+  const [openSelectModal, setOpenSelectModal] = useState(false);
+  const [selectedRoutes, setSelectedRoutes] = useState<RouteMap[]>([]);
+
 
   // FILTER + LIMIT For Optimization since we do have a lot of data.
   const filteredFromStops = useMemo(() => {
@@ -145,12 +149,32 @@ export default function DirectionButton({setPosition, mapRef, setRouteMap}: Dire
       });
       return;
     };
+    if (routeMap.size > 1) {
+      // convert map → array for modal
+      setSelectedRoutes(Array.from(routeMap.values()));
+      setOpenSelectModal(true);
+      setOpenDrawer(false);
+      return; 
+    }
+
     mapRef.current?.flyTo(filteredRawPosition[0], 18);
     setPosition(filteredRawPosition);
     setRouteMap(routeMap);
     setOpenDrawer(false);
   }, [rawPosition, setPosition, mapRef]);
 
+
+  const handleSelectRoute = useCallback((route: RouteMap) => {
+    const newMap = new Map<string, RouteMap>();
+    newMap.set(route.jeepName, route);
+
+    mapRef.current?.flyTo(route.position[0], 18);
+    setPosition(route.position);
+    setRouteMap(newMap);
+
+    setOpenSelectModal(false);
+    setOpenDrawer(false);
+  }, [selectedRoutes]);
 
   // Convert jeep stops to set for fast search
   const stopNames = useMemo(() => {
@@ -358,6 +382,12 @@ export default function DirectionButton({setPosition, mapRef, setRouteMap}: Dire
           </DrawerFooter>
         </DrawerContent>
       </Drawer>
+      <SelectJeepRouteModal
+        open={openSelectModal}
+        onClose={setOpenSelectModal}
+        routes={selectedRoutes}
+        onSelect={handleSelectRoute}
+      />
     </div>
   );
 }

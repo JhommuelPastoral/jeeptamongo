@@ -25,7 +25,6 @@ import EnableLocationPermissionError from "./_components/enableLocationPermissio
 import DirectionButton from "./_components/directionButton";
 import EmailButton from "./_components/emailButton";
 import ViewJeepStopsButton from "./_components/viewJeepStops";
-
 import {
   HoverCard,
   HoverCardContent,
@@ -170,7 +169,7 @@ export default function Dashboard() {
       localStorage.setItem("jeepTa-Theme", "dark");
       setTheme("dark");
     }
-  };
+  };  
 
   // This should Be deleted when the Visible Routes is implemented
   // const visiblePolyline = useMemo(() => {
@@ -276,6 +275,7 @@ export default function Dashboard() {
 
 
   if(!session?.user) return <Loading title="session" />
+
   return (
     <div className="w-screen h-dvh relative">
       {/* Map */}
@@ -311,7 +311,7 @@ export default function Dashboard() {
             className="animate-pulse"
           />        
 
-          {/* {visibleRoutes.map((route) => {
+          {visibleRoutes.map((route) => {
             if (route.position.length < 1) return null;
             return (
               <Polyline
@@ -321,7 +321,7 @@ export default function Dashboard() {
                 weight={3}
               />
             );
-          })} */}
+          })}
 {/* 
           {position.length > 0 && (
             <>
@@ -332,7 +332,7 @@ export default function Dashboard() {
               />
             </>
           )} */}
-
+{/* 
           {uniquePositions.length > 0 && (
             <>
               <Polyline 
@@ -341,7 +341,7 @@ export default function Dashboard() {
                 weight={5}
               />
             </>
-          )}
+          )} */}
         </MapContainer>   
       </Suspense>
 
@@ -372,7 +372,7 @@ export default function Dashboard() {
                 <HoverCard openDelay={10} closeDelay={100}>
                   <HoverCardTrigger asChild>
                     <Avatar >
-                      <AvatarImage src={session?.user?.image || ""} alt="User Profile" />
+                      <AvatarImage src={session?.user?.image!} alt="User Profile" />
                       <AvatarFallback className="bg-amber-400 text-black">{session?.user?.name?.charAt(0) || ""}</AvatarFallback>
                     </Avatar>
                   </HoverCardTrigger>
@@ -414,7 +414,7 @@ export default function Dashboard() {
           ))}
         </div>
       </div>
-
+      
       {/* Controls */}
       <div className="bottom-0 right-0 absolute">
         <div className="flex flex-col items-start gap-2 p-4">
@@ -424,7 +424,6 @@ export default function Dashboard() {
           <ViewJeepStopsButton/>
         </div>
       </div>
-      
     </div>
   );
 }
