@@ -19,11 +19,59 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+// export const metadata: Metadata = {
+//   title: "JeepTa",
+//   description: "JeepTa is a real-time jeepney tracking and navigation app designed to help commuters in Davao City travel smarter, faster, and more efficiently.",
+//   icons:{
+//     icon:"/logo.svg"
+//   },
+//   verification:{
+//     google:"IrVDkTMO2zLnm-lz7ie-D2IQdtMkPSdsLA4yoM6JCro"
+//   }
+// };
+
 export const metadata: Metadata = {
-  title: "JeepTa",
-  description: "JeepTa is a real-time jeepney tracking and navigation app designed to help commuters in Davao City travel smarter, faster, and more efficiently.",
-  icons:{
-    icon:"/logo.svg"
+  title: {
+    default: "JeepTa – Real-Time Jeepney Tracker for Davao City",
+    template: "%s | JeepTa",
+  },
+  description:
+    "JeepTa is a real-time jeepney tracking and navigation app designed to help commuters in Davao City travel smarter, faster, and more efficiently.",
+  keywords: [
+    "jeepney tracker",
+    "Davao City commute",
+    "real-time jeepney",
+    "JeepTa",
+    "Davao transportation",
+    "jeepney navigation",
+  ],
+  authors: [{ name: "JeepTa" }],
+  creator: "JeepTa",
+  metadataBase: new URL("https://jeepta-zo3h.onrender.com"),
+  alternates: {
+    canonical: "/",
+  },
+  openGraph: {
+    title: "JeepTa – Real-Time Jeepney Tracker for Davao City",
+    description:
+      "Track jeepneys in real-time and navigate Davao City smarter with JeepTa.",
+    url: "https://jeepta-zo3h.onrender.com",
+    siteName: "JeepTa",
+    locale: "en_PH",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "JeepTa – Real-Time Jeepney Tracker for Davao City",
+    description:
+      "Track jeepneys in real-time and navigate Davao City smarter with JeepTa.",
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
+  icons: {
+    icon: "/logo.svg",
   },
   verification:{
     google:"IrVDkTMO2zLnm-lz7ie-D2IQdtMkPSdsLA4yoM6JCro"
